@@ -1,0 +1,11 @@
+(
+  name: "Performative",
+  summary: "Design performative instruments and composition setups.",
+  version: "0.0.1",
+  schelp: "Performative.schelp",
+  dependencies: ["https://codeberg.org/madskjeldgaard/Monolithic"],
+  license: "GNU GPL v3.0",
+  copyright: "madskjeldgaard",
+  ext_dependency: nil,
+  url: "https://codeberg.org/madskjeldgaard/Performative"
+)
