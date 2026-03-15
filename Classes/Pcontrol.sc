@@ -33,13 +33,13 @@ Pcontrol [] {
     }
 
     at{|key|
-        var res = params[key];
+        var res = params[key.asSymbol];
         if(res.isNil, {
             res = Pparam.new(0, [0.0,1.0,\lin].asSpec);
-            params.put(key, res);
+            params.put(key.asSymbol, res);
         });
 
-        ^params[key];
+        ^params[key.asSymbol];
     }
 
     setRaw{|...keyValuePairs|
@@ -210,7 +210,7 @@ Pcontrol [] {
             var clumpedArgs = keysSourcesSpecs.clump(3);
 
             clumpedArgs.do{|args|
-                var key = args[0];
+                var key = args[0].asSymbol;
                 var source = args[1];
                 var spec = args[2];
 
@@ -226,6 +226,7 @@ Pcontrol [] {
     }
 
     addOneParam{|key, source, spec|
+        key = key.asSymbol;
         if(params[key].notNil, {
             params[key].source = source;
             params[key].spec = spec ? Spec.specs[key] ? params[key].spec ? [0.0 ,1.0, \lin].asSpec;
