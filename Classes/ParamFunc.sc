@@ -471,6 +471,139 @@ ParamFuncSet[]{
 
         this.changed();
     }
+    //------------------------------------------------------------------//
+    //                             Presets                              //
+    //------------------------------------------------------------------//
+    // This object contains a presets dictionary with all current presets, these can be saved and loaded to/from a file.
 
+
+    // Saves parameters, parameter states and snapshots to the presets dictionary under the given name, overwriting existing preset with same name
+    savePresetsToFile{|filePath|
+        var preset = (
+            // all: all,
+            snapshots: snapshots
+        );
+
+        preset.writeArchive(filePath);
+
+    }
+
+    loadPreset{|filePath|
+        var preset = Object.readArchive(filePath);
+        if(preset.isNil) {
+            "ParamFuncSet: Failed to load preset from file %".format(filePath).error;
+        } {
+            // Clear current state
+            // all.clear;
+            snapshots.clear;
+
+            // Load new state
+            // preset.all.keysValuesDo{ |key, paramFunc|
+            //     all.put(key, paramFunc);
+            // };
+
+            preset.snapshots.keysValuesDo{ |key, snapshot|
+                snapshots.put(key, snapshot);
+            };
+
+            this.changed();
+        }
+
+    }
+}
+
+TestParamFuncSet : PerformativeTest {
+
+    setUp {
+        // Called before each test
+    }
+
+    tearDown {
+        // Called after each test
+    }
+
+    test_add_and_at {
+        var pfs = ParamFuncSet();
+        pfs.add(\freq, {|mapped, raw| }, [10, 1000, \exp].asSpec);
+        this.assert(pfs.at(\freq).notNil, "ParamFuncSet should contain freq key");
+    }
+
+    test_randomizeAll {
+        var pfs = ParamFuncSet();
+        pfs.add(\freq, {|mapped, raw| }, [10, 1000, \exp].asSpec);
+        pfs.add(\amp, {|mapped, raw| }, \amp.asSpec);
+        pfs[\freq].setRaw(0.5);
+        pfs.randomizeAll();
+        this.assert(pfs.at(\freq).value >= 10 and: { pfs.at(\freq).value <= 1000 }, "Randomized freq should be in range");
+        this.assertFloatEquals(pfs.at(\freq).getUnmapped, pfs.at(\freq).spec.unmap(pfs.at(\freq).value), "Unmapped value should match spec unmap of mapped value");
+        this.assert(pfs.at(\amp).value >= 0 and: { pfs.at(\amp).value <= 1 }, "Randomized amp should be in range");
+    }
+
+    test_snapshot_and_restore {
+        var pfs = ParamFuncSet();
+        var freqSpec = [10, 1000, \exp].asSpec;
+        var ampSpec = \amp.asSpec;
+        pfs.add(\freq, {|mapped, raw| }, freqSpec);
+        pfs.add(\amp, {|mapped, raw| }, ampSpec);
+        pfs.at(\freq).set(0.1);
+        pfs.at(\amp).set(0.9);
+        pfs.snapshot(\snap1);
+        pfs.at(\freq).set(0.9);
+        pfs.at(\amp).set(0.1);
+        pfs.restoreSnapshot(\snap1);
+        this.assertFloatEquals(pfs.at(\freq).getUnmapped, 0.1, "Restored freq should be 0.1");
+        this.assertFloatEquals(pfs.at(\freq).value, freqSpec.map(0.1), "Restored freq should be mapped to spec");
+        this.assertFloatEquals(pfs.at(\amp).getUnmapped, 0.9, "Restored amp should be 0.9");
+        this.assertFloatEquals(pfs.at(\amp).value, ampSpec.map(0.9), "Restored amp should be mapped to spec");
+    }
+
+    test_remove_and_removeSnapshot {
+        var pfs = ParamFuncSet();
+        pfs.add(\freq, {|mapped, raw| }, [10, 1000, \exp].asSpec);
+        pfs.snapshot(\snap1);
+        pfs.remove(\freq);
+        this.assert(pfs.at(\freq).isNil, "Removed key should be nil");
+        pfs.removeSnapshot(\snap1);
+        this.assert(pfs.snapshots[\snap1].isNil, "Removed snapshot should be nil");
+    }
+
+    test_save_presets_to_file {
+        var tmpdir = PathName.tmp;
+        var filePath = tmpdir +/+ "paramFuncSetTest.scd";
+        var pfs = ParamFuncSet();
+        pfs.add(\freq, {|mapped, raw| }, [10, 1000 , \exp].asSpec);
+        pfs.add(\amp, {|mapped, raw| }, \amp.asSpec);
+        pfs.at(\freq).set(0.5);
+        pfs.at(\amp).set(0.5);
+        pfs.savePresetsToFile(filePath);
+        this.assert(File.exists(filePath), "Preset file should exist after saving");
+
+        // Clean up
+        File.delete(filePath);
+    }
+
+    test_load_presets_from_file {
+        var tmpdir = PathName.tmp;
+        var filePath = tmpdir +/+ "paramFuncSetTest.scd";
+        var pfs = ParamFuncSet();
+        var loadedPfs;
+        pfs.add(\freq, {|mapped, raw| }, [10, 1000 , \exp].asSpec);
+        pfs.add(\amp, {|mapped, raw| }, \amp.asSpec);
+        pfs.at(\freq).set(0.5);
+        pfs.at(\amp).set(0.5);
+        pfs.savePresetsToFile(filePath);
+
+        loadedPfs = ParamFuncSet();
+        loadedPfs.loadPreset(filePath);
+        this.assert(loadedPfs.at(\freq).notNil, "Loaded ParamFuncSet should contain freq key", onFailure: {
+                "Loaded ParamFuncSet : %".format(loadedPfs.all.keys).postln;
+        });
+        this.assert(loadedPfs.at(\amp).notNil, "Loaded ParamFuncSet should contain amp key");
+        this.assertFloatEquals(loadedPfs.at(\freq).value, pfs.at(\freq).value, "Loaded freq value should match saved value");
+        this.assertFloatEquals(loadedPfs.at(\amp).value, pfs.at(\amp).value, "Loaded amp value should match saved value");
+
+        // Clean up
+        File.delete(filePath);
+    }
 
 }

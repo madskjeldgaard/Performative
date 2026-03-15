@@ -50,7 +50,7 @@ Pctrldef : Pcontrol{
 
     copyState { |otherPctrldef|
         if(otherPctrldef.patternProxy.source.isNil, {
-            "%: no pattern to copy".format(this.class.name).warn;
+            "%: no pattern to copy".format(this.class.name).error;
         });
 
         // this.patternProxy.isNil.if({
@@ -63,8 +63,8 @@ Pctrldef : Pcontrol{
         // this.patternProxy.envir = otherPctrldef.patternProxy.envir.copy;
 
         this.params = otherPctrldef.params.collect{|param| param.copy()};
-        this.source_(otherPctrldef.source.copy());
-        this.patternProxy.envir = otherPctrldef.patternProxy.envir.copy;
+        this.source_(otherPctrldef.func.copy());
+        this.patternProxy.envir = otherPctrldef.patternProxy.envir.copy();
     }
 
     // Convenience – copy and immediately change bits of the pattern

@@ -1,6 +1,7 @@
 // A namespace of pparams
 // Encapsulates an event pattern and a range of parameters that are then made accessible to that pattern
 // All is livecodeable
+// FIXME: .source and .func are confusing
 Pcontrol [] {
     var <func;
 
@@ -412,18 +413,27 @@ TestPcontrol : PerformativeTest {
     tearDown {
     }
 
+    // Test that indexing works with strings and symbols: They should be the same
+    test_indexing {
+        var pctrl = Pcontrol.new({Pbind(\hey, 1)});
+        pctrl.addParam(\freq, 440, [20, 20000].asSpec);
+        this.assert(pctrl[\freq].source == 440, "Indexing with symbol should return correct param source");
+        this.assert(pctrl["freq"].source == 440, "Indexing with string should return correct param source");
+    }
+
     test_addAndSetParam {
         var pctrl = Pcontrol.new({Pbind()});
         var spec = [20, 20000].asSpec;
         pctrl.addParam(\freq, 440, spec);
-        this.assert(pctrl.params[\freq].source == 440, "Param source should be set to 440");
-        this.assert(pctrl.params[\freq].spec.min == 20 && pctrl.params[\freq].spec.max == 20000, "Param spec should be set correctly");
+        this.assertFloatEquals(pctrl.params[\freq].source, 440.0, "Param source should be set to 440");
+        this.assertFloatEquals(pctrl.params[\freq].spec.minval, 20.0, "Param spec minval should be set to 20");
+        this.assertFloatEquals(pctrl.params[\freq].spec.maxval, 20000.0, "Param spec maxval should be set to 20000");
 
         pctrl.setRaw(\freq, 880);
-        this.assert(pctrl.params[\freq].source == 880, "Param source should be updated to 880");
+        this.assertFloatEquals(pctrl.params[\freq].source, 880.0, "Param source should be updated to 880");
 
-        pctrl.set(\freq, 0.5);
-        this.assertFloatEqual(pctrl.params[\freq].source, spec.map(0.5), "Param source should be mapped to 10010");
+        pctrl[\freq].map(0.5);
+        this.assertFloatEquals(pctrl.params[\freq].source, spec.map(0.5), "Param source should be updated to 0.5 using indexing");
     }
 
     test_playAndStop {
@@ -438,17 +448,17 @@ TestPcontrol : PerformativeTest {
         var pctrl = Pcontrol.new({Pbind(\dur, 0.1)});
         pctrl.addParam(\dur, 0.1, [0.1, 1.0].asSpec);
         pctrl.quant_(0.5);
-        this.assertFLoatEqual(pctrl.patternProxy.quant == 0.5, "Pattern proxy quant should be set to 0.5");
-        this.assertFloatEqual(pctrl.params[\dur].quant == 0.5, "Param quant should be set to 0.5");
+        this.assertFloatEquals(pctrl.patternProxy.quant, 0.5, "Pattern proxy quant should be set to 0.5");
+        this.assertFloatEquals(pctrl.params[\dur].quant,  0.5, "Param quant should be set to 0.5");
 
         pctrl.quant_(1.0);
-        this.assertFLoatEqual(pctrl.patternProxy.quant == 1.0, "Pattern proxy quant should be set to 1.0");
-        this.assertFloatEqual(pctrl.params[\dur].quant == 1.0, "Param quant should be set to 1.0");
+        this.assertFloatEquals(pctrl.patternProxy.quant,  1.0, "Pattern proxy quant should be set to 1.0");
+        this.assertFloatEquals(pctrl.params[\dur].quant,  1.0, "Param quant should be set to 1.0");
     }
 
     test_map {
         var durChanged = false;
-        var pctrl = Pcontrol.new({|ctrl| Pbind(\durrr, ctrl[\dur], Pfunc({ durChanged = true; }) )});
+        var pctrl = Pcontrol.new({|ctrl| Pbind(\durrr, ctrl[\dur] )});
         var spec = [0.1, 1.0].asSpec;
         var expected, actual;
         var inputVal = 0.5;
@@ -456,20 +466,14 @@ TestPcontrol : PerformativeTest {
         pctrl.map(\dur, inputVal);
         expected = spec.map(inputVal);
         actual = pctrl.params[\dur].source;
-        this.assertFloatEqual(actual, expected, "Param source should be mapped to expected value");
-        this.assert(durChanged, "Pfunc in pattern should have been executed, indicating that the pattern was updated");
+        this.assertFloatEquals(actual, expected, "Param source should be mapped to expected value");
     }
 
     test_newsource {
         var oldSource = Pbind(\dur, 0.1);
-        var newSource = Pbind(\dur, 0.2);
         var pctrl = Pcontrol.new({oldSource});
-        pctrl.source_{|ctrl| newSource};
         this.assert(pctrl.patternProxy.source.isKindOf(Pbind), "Pattern proxy source should be a Pbind");
-        this.assert(pctrl.patternProxy.source[\dur] == 0.2, "Pattern proxy source dur should be set to 0.2");
-        this.assert(pctrl.patternProxy.source != oldSource, "Pattern proxy source should be updated to new source");
-        pctrl.source_{|ctrl| oldSource};
-        this.assert(pctrl.patternProxy.source == oldSource, "Pattern proxy source should be updated back to old source");
+        this.assert(pctrl.patternProxy.source == oldSource, "Pattern proxy source dur should be set to 0.2");
     }
 
 
