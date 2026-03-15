@@ -235,44 +235,6 @@ Pcontrol [] {
         })
     }
 
-    // A convenience for creating a modality callback that will toggle this pattern on/off
-    mktlToggleAction{|verbose=true, isMomentary=false|
-        ^{|elem|
-            verbose.if({
-                "%: %".format(this.class.name, elem.value).postln;
-            });
-
-            isMomentary.if({
-                // Uses a toggle state to fake a latch
-                if(elem.value == 1 && toggleState, {
-                    "Toggling pattern".postln;
-                    this.toggle();
-
-                    // Flip the state
-                    toggleState = toggleState.not;
-                }, {
-                    // Reset the state
-                    toggleState = toggleState.not;
-                })
-            }, {
-                // Latching
-                if(elem.value == 1, {
-
-                    if(this.isPlaying.not, {
-                        verbose.if({
-                            "playing".postln
-                        });
-                        this.play;
-                    }, {
-                        verbose.if({
-                            "already playing.stopping".postln
-                        });
-                        this.stop;
-                    });
-                })
-            })
-        }
-    }
 
     gui{
         ^PcontrolGui.new(this)
@@ -438,6 +400,63 @@ Pcontrol [] {
             })
         }
     }
+}
+
+TestPcontrol : PerformativeTest {
+    var pctrl;
+
+    setUp {
+    }
+
+    tearDown {
+    }
+
+    test_addAndSetParam {
+        var pctrl = Pcontrol.new({Pbind()});
+        var spec = [20, 20000].asSpec;
+        pctrl.addParam(\freq, 440, spec);
+        this.assert(pctrl.params[\freq].source == 440, "Param source should be set to 440");
+        this.assert(pctrl.params[\freq].spec.min == 20 && pctrl.params[\freq].spec.max == 20000, "Param spec should be set correctly");
+
+        pctrl.setRaw(\freq, 880);
+        this.assert(pctrl.params[\freq].source == 880, "Param source should be updated to 880");
+
+        pctrl.set(\freq, 0.5);
+        this.assertFloatEqual(pctrl.params[\freq].source, spec.map(0.5), "Param source should be mapped to 10010");
+    }
+
+    test_playAndStop {
+        var pctrl = Pcontrol.new({Pbind(\dur, 0.1, \amp, 0.0)});
+        pctrl.play(TempoClock.default);
+        this.assert(pctrl.isPlaying, "Pcontrol should be playing after play is called");
+        pctrl.stop;
+        this.assert(pctrl.isPlaying.not, "Pcontrol should not be playing after stop is called");
+    }
+
+    test_quant {
+        var pctrl = Pcontrol.new({Pbind(\dur, 0.1)});
+        pctrl.addParam(\dur, 0.1, [0.1, 1.0].asSpec);
+        pctrl.quant_(0.5);
+        this.assertFLoatEqual(pctrl.patternProxy.quant == 0.5, "Pattern proxy quant should be set to 0.5");
+        this.assertFloatEqual(pctrl.params[\dur].quant == 0.5, "Param quant should be set to 0.5");
+
+        pctrl.quant_(1.0);
+        this.assertFLoatEqual(pctrl.patternProxy.quant == 1.0, "Pattern proxy quant should be set to 1.0");
+        this.assertFloatEqual(pctrl.params[\dur].quant == 1.0, "Param quant should be set to 1.0");
+    }
+
+    test_newsource {
+        var oldSource = Pbind(\dur, 0.1);
+        var newSource = Pbind(\dur, 0.2);
+        var pctrl = Pcontrol.new({oldSource});
+        pctrl.source_{|ctrl| newSource};
+        this.assert(pctrl.patternProxy.source.isKindOf(Pbind), "Pattern proxy source should be a Pbind");
+        this.assert(pctrl.patternProxy.source[\dur] == 0.2, "Pattern proxy source dur should be set to 0.2");
+        this.assert(pctrl.patternProxy.source != oldSource, "Pattern proxy source should be updated to new source");
+        pctrl.source_{|ctrl| oldSource};
+        this.assert(pctrl.patternProxy.source == oldSource, "Pattern proxy source should be updated back to old source");
+    }
 
 
+    // TODO: Test presets
 }
