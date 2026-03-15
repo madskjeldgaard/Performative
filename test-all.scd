@@ -1,1 +1,2 @@
-PerformativeTest.runAll();
+// PerformativeTest.runAll();
+TestPparam.run()
