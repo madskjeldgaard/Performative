@@ -446,6 +446,20 @@ TestPcontrol : PerformativeTest {
         this.assertFloatEqual(pctrl.params[\dur].quant == 1.0, "Param quant should be set to 1.0");
     }
 
+    test_map {
+        var durChanged = false;
+        var pctrl = Pcontrol.new({|ctrl| Pbind(\durrr, ctrl[\dur], Pfunc({ durChanged = true; }) )});
+        var spec = [0.1, 1.0].asSpec;
+        var expected, actual;
+        var inputVal = 0.5;
+        pctrl.addParam(\dur, 0.1, spec);
+        pctrl.map(\dur, inputVal);
+        expected = spec.map(inputVal);
+        actual = pctrl.params[\dur].source;
+        this.assertFloatEqual(actual, expected, "Param source should be mapped to expected value");
+        this.assert(durChanged, "Pfunc in pattern should have been executed, indicating that the pattern was updated");
+    }
+
     test_newsource {
         var oldSource = Pbind(\dur, 0.1);
         var newSource = Pbind(\dur, 0.2);
