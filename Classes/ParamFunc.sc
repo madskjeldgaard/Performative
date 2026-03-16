@@ -481,7 +481,8 @@ ParamFuncSet[]{
     savePresetsToFile{|filePath|
         var preset = (
             // all: all,
-            snapshots: snapshots
+            snapshots: snapshots,
+            currentValues: all.collect{ |paramFunc, key|  paramFunc.value() }
         );
 
         preset.writeArchive(filePath);
@@ -504,6 +505,15 @@ ParamFuncSet[]{
 
             preset.snapshots.keysValuesDo{ |key, snapshot|
                 snapshots.put(key, snapshot);
+            };
+
+            preset.currentValues.keysValuesDo{ |key, value|
+                var paramFunc = all[key];
+                if(paramFunc.notNil) {
+                    paramFunc.setRaw(value);
+                } {
+                    "ParamFuncSet: No ParamFunc found for key % in preset file %".format(key, filePath).warn;
+                }
             };
 
             this.changed();
@@ -593,7 +603,10 @@ TestParamFuncSet : PerformativeTest {
         pfs.at(\amp).set(0.5);
         pfs.savePresetsToFile(filePath);
 
+        // PF needs to define the paramfuncs before presets can be loaded
         loadedPfs = ParamFuncSet();
+        loadedPfs.add(\freq, {|mapped, raw| }, [10, 1000 , \exp].asSpec);
+        loadedPfs.add(\amp, {|mapped, raw| }, \amp.asSpec);
         loadedPfs.loadPreset(filePath);
         this.assert(loadedPfs.at(\freq).notNil, "Loaded ParamFuncSet should contain freq key", onFailure: {
                 "Loaded ParamFuncSet : %".format(loadedPfs.all.keys).postln;
