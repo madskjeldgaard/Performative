@@ -415,8 +415,6 @@ ParamFuncSet[]{
         newFunc.setRaw(newFunc.value);
 
         this.changed();
-
-        ^newFunc;
     }
 
     remove { |key|
