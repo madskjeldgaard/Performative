@@ -46,7 +46,7 @@ ParamFuncSetGui {
         set.changeCallback = setChangeFunc;
 
         // Create and set callbacks for each ParamFunc
-        set.all.keysValuesDo { |key, paramFunc|
+        set.params.keysValuesDo { |key, paramFunc|
             // Make sure it's actually a ParamFunc
             if(paramFunc.isKindOf(ParamFunc)) {
                 var paramChangeFunc = {
@@ -69,7 +69,7 @@ ParamFuncSetGui {
         };
 
         // Remove param callbacks
-        set.all.keysValuesDo { |key, paramFunc|
+        set.params.keysValuesDo { |key, paramFunc|
             if(paramFunc.isKindOf(ParamFunc)) {
                 paramFunc.changeCallback = nil;
             };
@@ -80,7 +80,7 @@ ParamFuncSetGui {
 
     // Update a single parameter in the GUI
     updateParam { |key|
-        var paramFunc = set.all[key];
+        var paramFunc = set.params[key];
         var val;
 
         // Skip if not a ParamFunc
@@ -164,7 +164,7 @@ ParamFuncSetGui {
 
     // Update all GUI widgets from current parameter values
     updateAllParams {
-        set.all.keysValuesDo { |key, paramFunc|
+        set.params.keysValuesDo { |key, paramFunc|
             this.updateParam(key);
         };
 
@@ -329,7 +329,7 @@ ParamFuncSetGui {
         paramViews.clear;
 
         // Sort keys for consistent display
-        set.all.keys.asArray.sort.do { |key|
+        set.params.keys.asArray.sort.do { |key|
             var paramFunc = set[key.postln];
 
             // Skip if not a ParamFunc
@@ -347,7 +347,7 @@ ParamFuncSetGui {
         };
 
         // Make scrollable if too many parameters
-        if(set.all.size > 8) {
+        if(set.params.size > 8) {
             ^ScrollView.new().canvas_(paramView);
         } {
             ^paramView;

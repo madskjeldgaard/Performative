@@ -399,6 +399,15 @@ ParamFuncSet[]{
         }
     }
 
+    setRaw{|key, value|
+        var paramFunc = params[key];
+        if(paramFunc.notNil) {
+            paramFunc.setRaw(value);
+        } {
+            "ParamFuncSet: No ParamFunc found for key %".format(key).warn;
+        }
+    }
+
     add { |key, func, controlspec|
         var newFunc, currentValue;
         if(params[key].notNil) {
@@ -411,7 +420,7 @@ ParamFuncSet[]{
 
         params.put(key, newFunc);
 
-        // Call Paramfunc
+        // C Paramfunc
         newFunc.setRaw(newFunc.value);
 
         this.changed();
@@ -427,7 +436,7 @@ ParamFuncSet[]{
         ^params[key];
     }
 
-    // Randomize all except the keys in except
+    // Randomize  except the keys in except
     randomizeAll {|...except|
         params.keysValuesDo{ |key, paramFunc|
             if(except.notNil and: { except.contains(key) }) {} {
@@ -443,7 +452,7 @@ ParamFuncSet[]{
     }
 
     snapshot{|name|
-        // Each snapshot saves the current state of all ParamFuncs in the set
+        // Each snapshot saves the current state of  ParamFuncs in the set
         var newSnapshot = IdentityDictionary.new;
         params.keysValuesDo{ |key, paramFunc|
             var val = paramFunc.value;
@@ -481,13 +490,13 @@ ParamFuncSet[]{
     //------------------------------------------------------------------//
     //                             Presets                              //
     //------------------------------------------------------------------//
-    // This object contains a presets dictionary with all current presets, these can be saved and loaded to/from a file.
+    // This object contains a presets dictionary with  current presets, these can be saved and loaded to/from a file.
 
 
     // Saves parameters, parameter states and snapshots to the presets dictionary under the given name, overwriting existing preset with same name
     savePresetsToFile{|filePath|
         var preset = (
-            // all: all,
+            // : all,
             snapshots: snapshots,
             currentValues: params.collect{ |paramFunc, key|  paramFunc.value() }
         );
@@ -502,12 +511,12 @@ ParamFuncSet[]{
             "ParamFuncSet: Failed to load preset from file %".format(filePath).error;
         } {
             // Clear current state
-            // all.clear;
+            // .clear;
             snapshots.clear;
 
             // Load new state
-            // preset.all.keysValuesDo{ |key, paramFunc|
-            //     all.put(key, paramFunc);
+            // preset..keysValuesDo{ |key, paramFunc|
+            //     .put(key, paramFunc);
             // };
 
             preset.snapshots.keysValuesDo{ |key, snapshot|
@@ -532,8 +541,6 @@ ParamFuncSet[]{
 ParamsDef : ParamFuncSet {
     var <key;
     classvar <>all;
-
-    var <paramFuncSet;
 
     *new{ arg key;
         var res = this.at(key);
@@ -649,7 +656,7 @@ TestParamFuncSet : PerformativeTest {
         loadedPfs.add(\amp, {|mapped, raw| }, \amp.asSpec);
         loadedPfs.loadPreset(filePath);
         this.assert(loadedPfs.at(\freq).notNil, "Loaded ParamFuncSet should contain freq key", onFailure: {
-                "Loaded ParamFuncSet : %".format(loadedPfs.all.keys).postln;
+                "Loaded ParamFuncSet : %".format(loadedPfs.params.keys).postln;
         });
         this.assert(loadedPfs.at(\amp).notNil, "Loaded ParamFuncSet should contain amp key");
         this.assertFloatEquals(loadedPfs.at(\freq).value, pfs.at(\freq).value, "Loaded freq value should match saved value");
