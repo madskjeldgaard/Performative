@@ -6,6 +6,7 @@ ParamFuncSetGui {
     var saveSnapshotButton, recallSnapshotButton, deleteSnapshotButton;
     var randomizeAllButton;
     var font, headerFont;
+    var deferDelta = 0.01;
 
     // Callback functions for updates
     var setChangeFunc;
@@ -39,7 +40,7 @@ ParamFuncSetGui {
     setupDependencies {
         // Create callback function for set-level changes
         setChangeFunc = {
-            { this.updateAllParams() }.defer;
+            { this.updateAllParams() }.defer(deferDelta);
         };
 
         // Set the callback on the set
@@ -50,10 +51,8 @@ ParamFuncSetGui {
             // Make sure it's actually a ParamFunc
             if(paramFunc.isKindOf(ParamFunc)) {
                 var paramChangeFunc = {
-                    "Updating parameter '%'".format(key).postln;
-                    { this.updateParam(key) }.defer;
+                    { this.updateParam(key) }.defer(deferDelta);
                 };
-                "Adding callback for parameter '%'".format(key).postln;
                 paramChangeFuncs.put(key, paramChangeFunc);
                 paramFunc.changeCallback_(paramChangeFunc);
             } {
@@ -90,7 +89,7 @@ ParamFuncSetGui {
 
         val = paramFunc.value;
 
-        defer{
+        {
             if(paramViews[key].notNil) {
                 case
                 { paramViews[key][\type] == \number } {
@@ -159,7 +158,7 @@ ParamFuncSetGui {
                     };
                 };
             }
-        }
+        }.defer(deferDelta);
     }
 
     // Update all GUI widgets from current parameter values
@@ -330,7 +329,7 @@ ParamFuncSetGui {
 
         // Sort keys for consistent display
         set.params.keys.asArray.sort.do { |key|
-            var paramFunc = set[key.postln];
+            var paramFunc = set[key];
 
             // Skip if not a ParamFunc
             if(paramFunc.isKindOf(ParamFunc)) {
@@ -553,7 +552,6 @@ ParamFuncSetGui {
             this.removeDependencies();
         });
 
-        "Setting new set".postln;
         // Update set
         set = newSet;
 
