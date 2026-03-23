@@ -359,7 +359,7 @@ p[\freq].set(0.5);
 
 */
 ParamFuncSet[]{
-    var <all;
+    var <params;
     var <snapshots;
     var changeCallback; // Callback when any ParamFunc in the set changes
 
@@ -368,13 +368,13 @@ ParamFuncSet[]{
     }
 
     init {
-        all = IdentityDictionary.new;
+        params = IdentityDictionary.new;
         snapshots = IdentityDictionary.new;
         changeCallback = {};
     }
 
     applyAll {
-        all.keysValuesDo{ |name, paramFunc|
+        params.keysValuesDo{ |name, paramFunc|
             var currentValue = paramFunc.value;
             paramFunc.setRaw(currentValue);
         }
@@ -390,9 +390,18 @@ ParamFuncSet[]{
         changeCallback = newFunc;
     }
 
+    set{|key, value|
+        var paramFunc = params[key];
+        if(paramFunc.notNil) {
+            paramFunc.set(value);
+        } {
+            "ParamFuncSet: No ParamFunc found for key %".format(key).warn;
+        }
+    }
+
     add { |key, func, controlspec|
         var newFunc, currentValue;
-        if(all[key].notNil) {
+        if(params[key].notNil) {
             // "ParamFuncSet: Key % already exists. Removing.".warn;
             this.remove(key);
         };
@@ -400,7 +409,7 @@ ParamFuncSet[]{
         newFunc = ParamFunc.new(func, controlspec)
         .changeCallback_({ this.changed });
 
-        all.put(key, newFunc);
+        params.put(key, newFunc);
 
         // Call Paramfunc
         newFunc.setRaw(newFunc.value);
@@ -411,18 +420,18 @@ ParamFuncSet[]{
     }
 
     remove { |key|
-        all.removeAt(key);
+        params.removeAt(key);
 
         this.changed();
     }
 
     at { |key|
-        ^all[key];
+        ^params[key];
     }
 
     // Randomize all except the keys in except
     randomizeAll {|...except|
-        all.keysValuesDo{ |key, paramFunc|
+        params.keysValuesDo{ |key, paramFunc|
             if(except.notNil and: { except.contains(key) }) {} {
                 paramFunc.randomize;
             }
@@ -438,7 +447,7 @@ ParamFuncSet[]{
     snapshot{|name|
         // Each snapshot saves the current state of all ParamFuncs in the set
         var newSnapshot = IdentityDictionary.new;
-        all.keysValuesDo{ |key, paramFunc|
+        params.keysValuesDo{ |key, paramFunc|
             var val = paramFunc.value;
             "Putting key: %, normalized value: % in snapshot".format(key, val).postln;
             newSnapshot.put(key, val);
@@ -458,7 +467,7 @@ ParamFuncSet[]{
             "ParamFuncSet: No snapshot found with name %".format(name).error;
         } {
             snapshot.keysValuesDo{ |key, value|
-                var paramFunc = all[key];
+                var paramFunc = params[key];
 
                 if(paramFunc.notNil) {
                     "%, key: %, value: %".format(paramFunc, key, value).postln;
@@ -482,7 +491,7 @@ ParamFuncSet[]{
         var preset = (
             // all: all,
             snapshots: snapshots,
-            currentValues: all.collect{ |paramFunc, key|  paramFunc.value() }
+            currentValues: params.collect{ |paramFunc, key|  paramFunc.value() }
         );
 
         preset.writeArchive(filePath);
@@ -508,7 +517,7 @@ ParamFuncSet[]{
             };
 
             preset.currentValues.keysValuesDo{ |key, value|
-                var paramFunc = all[key];
+                var paramFunc = params[key];
                 if(paramFunc.notNil) {
                     paramFunc.setRaw(value);
                 } {
@@ -520,6 +529,39 @@ ParamFuncSet[]{
         }
 
     }
+}
+
+ParamsDef : ParamFuncSet {
+    var <key;
+    classvar <>all;
+
+    var <paramFuncSet;
+
+    *new{ arg key;
+        var res = this.at(key);
+        if(res.isNil) {
+            res = super.new().prAdd(key);
+        }
+        ^res
+
+    }
+
+    *at{|key|
+        ^all[key]
+    }
+
+    *hasGlobalDictionary { ^true }
+
+    *initClass {
+        all = IdentityDictionary.new;
+        Class.initClassTree(Pdef);
+    }
+
+    prAdd { arg argKey;
+        key = argKey;
+        all.put(argKey, this);
+    }
+
 }
 
 TestParamFuncSet : PerformativeTest {
