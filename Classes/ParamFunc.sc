@@ -54,6 +54,7 @@ ParamFunc {
     var <func, <spec, <source, <normalizedValue;
     var <isListOfSpecs = false;
     var <controlMode;
+    var <lastRawValue;
     var changeCallback; // Callback when it is changed
 
     // If controlspec is an array, an ArrayedSpec is automatically created from it.
@@ -145,7 +146,10 @@ ParamFunc {
             if(controlMode != \specList, {
                 var mapped = spec.map(value);
                 source = mapped;
-                func.value(mapped, value); // mapped and raw
+                if(mapped != lastRawValue) {
+                    func.value(mapped, value); // mapped and raw
+                    lastRawValue = mapped;
+                };
             }, {
                 if(value.size != spec.size, {
                     "ParamFunc: Value array should be same size as speclist array".error;
@@ -153,14 +157,20 @@ ParamFunc {
                     // Special case: specList, it's a list of control specs
                     var mapped = spec.collect{|specItem, index| specItem.map(value[index])};
                     source = mapped;
-                    func.value(mapped, value); // mapped and raw
+                    if(mapped != lastRawValue) {
+                        func.value(mapped, value); // mapped and raw
+                        lastRawValue = mapped;
+                    };
                 })
             });
         } {
             var mapped = \uni.asSpec.map(value);
             "No spec found for %. Using unipolar".format(this.class.name).warn;
             source = mapped;
-            func.value(mapped, value);
+            if(mapped != lastRawValue) {
+                func.value(mapped, value);
+                lastRawValue = mapped;
+            }
         };
 
         this.changed();
@@ -456,7 +466,6 @@ ParamFuncSet[]{
         var newSnapshot = IdentityDictionary.new;
         params.keysValuesDo{ |key, paramFunc|
             var val = paramFunc.value;
-            "Putting key: %, normalized value: % in snapshot".format(key, val).postln;
             newSnapshot.put(key, val);
         };
         snapshots.put(name ?? {Date.getDate.stamp}, newSnapshot);
@@ -477,7 +486,6 @@ ParamFuncSet[]{
                 var paramFunc = params[key];
 
                 if(paramFunc.notNil) {
-                    "%, key: %, value: %".format(paramFunc, key, value).postln;
                     paramFunc.setRaw(value);
                 } {
                     "ParamFuncSet: No ParamFunc found for key % in snapshot %".format(key, name).warn;
