@@ -194,8 +194,14 @@
         .states_([["r"]])
         .action_({
             this.randomize;
-            slider.value_(spec.unmap(this.value));
-            valueBox.value_(this.value);
+
+            slider.value_(this.getUnmapped);
+            if(valueBox.notNil) {
+                valueBox.value_(this.value);
+            };
+            if(valueDisplay.notNil) {
+                valueDisplay.string_(this.value.asString);
+            };
         });
 
         // Lock button to toggle whether the parameter is randomizable
