@@ -587,7 +587,7 @@ ParamFuncSetGui {
 + ParamFunc {
     asView { |parent, bounds, font, key="Parameter"|
         var view, layout;
-        var paramVal, valueBox, slider, valueDisplay;
+        var paramVal, valueBox, slider, valueDisplay, randomizeButton, lockButton;
         var minval, maxval;
 
         // Fixed sizes for consistency
@@ -775,6 +775,35 @@ ParamFuncSetGui {
             "'%' parameter ignored".format(this.class).warn;
         };
 
+        // Add "r" momentary button that calls .randomize on the ParamFunc
+        randomizeButton = Button.new()
+        .states_([["r"]])
+        .action_({
+            this.randomize;
+            slider.value_(spec.unmap(this.value));
+            valueBox.value_(this.value);
+        });
+
+        // Lock button to toggle whether the parameter is randomizable
+        lockButton = Button.new()
+        .states_([
+            ["locked", Color.black, Color.gray],
+            ["locked", Color.black, Color.yellow]
+        ])
+        .action_({|obj|
+
+            var val = obj.value;
+
+            if(val == 0) {
+                this.lock(false)
+            } {
+                this.lock(true)
+            };
+        });
+
+        layout.add(*[randomizeButton,  s: 1]);
+        layout.add(*[lockButton, s: 1]);
+
         // Add the layout to the view
         if(controlMode == \specList) {
             view.layout.add(layout);
@@ -791,7 +820,7 @@ ParamFuncSetGui {
     }
 
     gui{|key="parameter"|
-        var window = Window.new("ParamFunc GUI - %".format(key));
+        var window = Window.new("%".format(key));
         window.layout = VLayout.new();
         window.layout.add(this.asView(window, key: key));
         window.front();

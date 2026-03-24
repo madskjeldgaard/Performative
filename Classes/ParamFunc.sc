@@ -204,22 +204,23 @@ ParamFunc {
     }
 
     randomize {
-        if(spec.notNil, {
-            if(controlMode != \specList, {
-                source = spec.randomValue;
+        if(locked.not, {
+
+            if(spec.notNil, {
+                if(controlMode != \specList, {
+                    source = spec.randomValue;
+                }, {
+                    source = spec.collect{|specItem| specItem.randomValue };
+                });
+                func.value(source, source); // mapped and raw are the same in this case
             }, {
-                source = spec.collect{|specItem| specItem.randomValue };
+                "No spec found for %.".format(this.class.name).error;
             });
-            func.value(source, source); // mapped and raw are the same in this case
-        }, {
-            "No spec found for %.".format(this.class.name).error;
-        });
 
             this.changed();
-
+        })
     }
 }
-
 
 TestParamFunc : PerformativeTest {
 
@@ -564,7 +565,22 @@ ParamFuncSet[]{
 
             this.changed();
         }
+    }
 
+    lockParams{|...paramsToLock|
+        params.keysValuesDo{ |key, paramFunc|
+            if(paramsToLock.contains(key)) {
+                paramFunc.lock(true);
+            }
+        };
+    }
+
+    unlockParams{|...paramsToUnlock|
+        params.keysValuesDo{ |key, paramFunc|
+            if(paramsToUnlock.contains(key)) {
+                paramFunc.lock(false);
+            }
+        };
     }
 }
 
@@ -596,7 +612,6 @@ ParamsDef : ParamFuncSet {
         key = argKey;
         all.put(argKey, this);
     }
-
 }
 
 TestParamFuncSet : PerformativeTest {
@@ -607,6 +622,21 @@ TestParamFuncSet : PerformativeTest {
 
     tearDown {
         // Called after each test
+    }
+
+    test_paramlock{
+        var pfs = ParamFuncSet();
+        pfs.add(\freq, {|mapped, raw| }, [10, 1000].asSpec);
+        pfs.lockParams(\freq);
+        pfs.at(\freq).setRaw(10);
+        this.assertEquals(pfs.at(\freq).value, 10, "Value should not change when locked");
+        pfs.unlockParams(\freq);
+        pfs.at(\freq).setRaw(5);
+        this.assertEquals(pfs.at(\freq).value, 5, "Value should change when unlocked");
+        // Test if randomization respects lock
+        pfs.lockParams(\freq);
+        pfs.randomizeAll();
+        this.assertEquals(pfs.at(\freq).value, 5, "Value should not change when locked during randomize");
     }
 
     test_add_and_at {
