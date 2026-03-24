@@ -195,6 +195,10 @@ ParamFunc {
         ^spec.unmap(source);
     }
 
+    unmap{|value|
+        ^spec.unmap(value);
+    }
+
     lock{|lockParam=true|
       locked = lockParam
     }
@@ -225,6 +229,16 @@ TestParamFunc : PerformativeTest {
 
     tearDown {
         // Called after each test
+    }
+
+    test_lock{
+        var pf = ParamFunc({|mapped, raw| }, [0, 10].asSpec);
+        pf.lock(true);
+        pf.set(0.5);
+        this.assertEquals(pf.value, 0, "Value should not change when locked");
+        pf.lock(false);
+        pf.set(0.5);
+        this.assertEquals(pf.value, 5, "Value should change when unlocked");
     }
 
     test_changeCallbacks {

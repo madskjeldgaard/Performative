@@ -21,37 +21,40 @@ Pctrldef(\yo)[\myArrayParam].source.postln;
 
 */
 Pparam : PatternProxy{
-    var <spec;
+    var <param;
 
     *new{|source, controlspec|
-        ^super.new().source_(source).spec_(controlspec ? [ 0.0,1.0,\lin])
+        ^super.new().source_(source).init(source, controlspec)
+    }
+
+    init{|source, controlspec|
+        this.source = source;
+        param = ParamFunc.new({|mapped|
+            this.source = mapped;
+        }, controlspec);
     }
 
     copy{
-        ^this.class.new(this.source, this.spec).envir_(this.envir.copy).spec_(this.spec)
+        ^this.class.new(this.source, this.param.spec).envir_(this.envir.copy)
     }
-
-	// copy {
-	// 	^super.copy.copyState(this)
-	// }
 
 	copyState { |proxy|
 		envir = proxy.envir.copy;
 		this.source = proxy.source;
-
+        this.param = proxy.param.copy;
 	}
 
     spec_{|newSpec|
-        spec = newSpec.asSpec;
+        param.spec_(newSpec);
     }
 
     // Set without spec
     setRaw{|value|
-        this.source = value;
+        param.setRaw(value);
     }
 
     set{|value|
-        this.setRaw(value);
+        param.setRaw(value);
     }
 
     value{
@@ -60,31 +63,15 @@ Pparam : PatternProxy{
 
     // Uses a spec to map it's values (yes, I know, it overwrites original map)
     map{|value|
-        if(spec.notNil, {
-
-            var mapped = spec.map(value);
-            var step = spec.step;
-
-            this.setRaw(mapped);
-
-        }, {
-            "No spec found for %. Using unipolar".format(this.class.name).warn;
-            this.setRaw(\uni.asSpec.map(value));
-        })
+        param.map(value);
     }
 
     getUnmapped{
-        ^spec.unmap(this.source);
+        ^param.getUnmapped
     }
 
-
     randomize{
-        if(spec.notNil, {
-            this.setRaw(spec.randomValue);
-        }, {
-            "No spec found for %. Using unipolar".format(this.class.name).warn;
-            this.setRaw(\uni.asSpec.randomValue)
-        });
+        param.randomize;
     }
 }
 
@@ -187,8 +174,8 @@ TestPparam : PerformativeTest {
         this.assert(copy.source != param.source, "After changing source, copy should not be equal to original");
 
         // Change spec
-        param.spec = [0,5];
-        this.assert(copy.spec != param.spec, "After changing spec, copy should not be equal to original");
+        param.param.spec = [0,5];
+        this.assert(copy.param.spec != param.param.spec, "After changing spec, copy should not be equal to original");
 
         // And finally check that they aren't equal
         this.assert(copy != param, "After changing source and spec, copy should not be equal to original");
