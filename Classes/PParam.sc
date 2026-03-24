@@ -189,3 +189,9 @@ TestPparam : PerformativeTest {
         this.assert(copy != param, "After changing source and spec, copy should not be equal to original");
     }
 }
+
++Pparam{
+    asView{|parent, bounds, font, key="Parameter"|
+        ^this.param.asView(parent, bounds, font, key)
+    }
+}
