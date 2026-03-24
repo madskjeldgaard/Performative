@@ -241,7 +241,8 @@ ParamFuncSetGui {
 
     makeControlSection {
         var controlLayout = VLayout.new();
-        var snapshotLayout, buttonLayout, randomizeLayout;
+        var snapshotLayout, buttonLayout, presetLayout, randomizeLayout;
+        var savePresetButton, loadPresetButton;
 
         // Snapshot name input - with fixed width for consistency
         snapshotNameInput = TextField.new()
@@ -289,35 +290,51 @@ ParamFuncSetGui {
             snapshotPopup.items = #["No Snapshots"];
         };
 
-        // Randomize button
-        randomizeAllButton = Button.new()
-        .states_([["Randomize All"]])
+        // Preset buttons
+        savePresetButton = Button.new()
+        .states_([["Save Preset"]])
         .action_({
-            set.randomizeAll();
+            Dialog.savePanel({|path| set.savePresetsToFile(path) }, Platform.userHomeDir);
+        })
+        .toolTip_("Save all presets to file");
+
+        loadPresetButton = Button.new()
+        .states_([["Load Preset"]])
+        .action_({
+            Dialog.openPanel({|path|
+                set.loadPreset(path);
+                this.updateAllParams();
+            }, Platform.userHomeDir);
+        })
+        .toolTip_("Load preset from file");
+
+
+        randomizeAllButton = Button.new()
+        .states_([["rand"]])
+        .action_({
+            set.randomizeAll;
+            this.updateAllParams;
         })
         .toolTip_("Randomize all parameters");
 
-        // Layouts with consistent spacing
-        snapshotLayout = HLayout.new(
-            [StaticText.new().string_("Snapshot name:"), s: 1],
-            snapshotNameInput
-        );
-
         buttonLayout = HLayout.new(
+            [StaticText.new().string_("Snap:"), s: 1],
+            snapshotNameInput,
             saveSnapshotButton,
             recallSnapshotButton,
-            deleteSnapshotButton
+            deleteSnapshotButton,
+            randomizeAllButton,
+            snapshotPopup
         );
 
-        randomizeLayout = HLayout.new(
-            [StaticText.new().string_("Snapshots:"), s: 1],
-            snapshotPopup,
-            randomizeAllButton
+        presetLayout = HLayout.new(
+            savePresetButton,
+            loadPresetButton
         );
 
-        controlLayout.add(snapshotLayout);
+
         controlLayout.add(buttonLayout);
-        controlLayout.add(randomizeLayout);
+        controlLayout.add(presetLayout);
 
         ^controlLayout;
     }

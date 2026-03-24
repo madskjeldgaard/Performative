@@ -180,14 +180,9 @@ ParamFuncSet[]{
             "ParamFuncSet: Failed to load preset from file %".format(filePath).error;
         } {
             // Clear current state
-            // .clear;
             snapshots.clear;
 
             // Load new state
-            // preset..keysValuesDo{ |key, paramFunc|
-            //     .put(key, paramFunc);
-            // };
-
             preset.snapshots.keysValuesDo{ |key, snapshot|
                 snapshots.put(key, snapshot);
             };
