@@ -87,7 +87,8 @@ ParamFunc {
     // 2. An array which will be converted to an ArraySpec, unless it's 3.
     // 3. An array of ControlSpecs to allow mapping values using arrays, for complex one to many mappings of parameters
     spec_ { |newSpec|
-        var isSpec = newSpec.isKindOf(Spec);
+        var isSymbol = newSpec.isKindOf(Symbol);
+        var isSpec = newSpec.isKindOf(Spec) or: isSymbol;
         var isArray = newSpec.isKindOf(SequenceableCollection);
         var isArraySpec = newSpec.isKindOf(ArrayedSpec);
         isListOfSpecs = if(isArray, {
@@ -110,6 +111,9 @@ ParamFunc {
 
         spec = switch(controlMode,
             \spec, {
+                isSymbol.if({
+                    newSpec = newSpec.asSpec
+                });
                 newSpec
             },
             \arrayspec, {
