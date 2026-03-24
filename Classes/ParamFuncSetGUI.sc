@@ -226,9 +226,9 @@ ParamFuncSetGui {
         var mainLayout = VLayout.new();
 
         // Header with title
-        mainLayout.add(
-            StaticText.new().string_("ParamFuncSet Controls").font_(headerFont)
-        );
+        // mainLayout.add(
+        //     StaticText.new().string_("ParamFuncSet Controls").font_(headerFont)
+        // );
 
         // Control section (snapshots, randomize)
         mainLayout.add(this.makeControlSection());
@@ -411,6 +411,15 @@ ParamFuncSetGui {
 
     gui { |key="ParamFuncSet"|
         var window = Window.new("ParamFuncSet GUI - %".format(key));
+        window.layout = VLayout.new();
+        window.layout.add(this.asView(window));
+        window.front();
+    }
+}
+
++ParamsDef{
+    gui {
+        var window = Window.new("%".format(key));
         window.layout = VLayout.new();
         window.layout.add(this.asView(window));
         window.front();

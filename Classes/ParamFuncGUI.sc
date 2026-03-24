@@ -191,7 +191,7 @@
 
         // Add "r" momentary button that calls .randomize on the ParamFunc
         randomizeButton = Button.new()
-        .states_([["r"]])
+        .states_([["rand"]])
         .action_({
             this.randomize;
 
