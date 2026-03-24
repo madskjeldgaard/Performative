@@ -205,7 +205,6 @@
             ["locked", Color.black, Color.yellow]
         ])
         .action_({|obj|
-
             var val = obj.value;
 
             if(val == 0) {
