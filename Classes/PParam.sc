@@ -73,6 +73,10 @@ Pparam : PatternProxy{
     randomize{
         param.randomize;
     }
+
+    gui{
+        ^param.gui;
+    }
 }
 
 PparamDef : Pparam{
