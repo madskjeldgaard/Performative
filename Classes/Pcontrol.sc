@@ -230,7 +230,7 @@ Pcontrol [] {
         key = key.asSymbol;
         if(params[key].notNil, {
             params[key].source = source;
-            params[key].spec = spec ? Spec.specs[key] ? params[key].spec ? [0.0 ,1.0, \lin].asSpec;
+            params[key].param.spec = spec ? Spec.specs[key] ? params[key].param.spec ? [0.0 ,1.0, \lin].asSpec;
         }, {
             var newParam = Pparam.new(source, spec);
             params.put(key, newParam)
@@ -251,7 +251,7 @@ Pcontrol [] {
         params.keysDo {|key|
             preset[key] = (
                 value: params[key].source,
-                spec: params[key].spec
+                spec: params[key].param.spec
             );
         };
 
@@ -268,7 +268,7 @@ Pcontrol [] {
             preset.keysDo {|key|
                 if (params[key].notNil) {
                     params[key].source = preset[key][\value];
-                    params[key].spec = preset[key][\spec];
+                    params[key].param.spec = preset[key][\spec];
                     this.changed(key, [key, preset[key][\value]]);
                 };
             };
@@ -299,7 +299,7 @@ Pcontrol [] {
                     };
 
                     // Always update spec
-                    params[key].spec = preset[key][\spec];
+                    params[key].param.spec = preset[key][\spec];
                 };
             };
             currentPresetName = name;
@@ -426,8 +426,8 @@ TestPcontrol : PerformativeTest {
         var spec = [20, 20000].asSpec;
         pctrl.addParam(\freq, 440, spec);
         this.assertFloatEquals(pctrl.params[\freq].source, 440.0, "Param source should be set to 440");
-        this.assertFloatEquals(pctrl.params[\freq].spec.minval, 20.0, "Param spec minval should be set to 20");
-        this.assertFloatEquals(pctrl.params[\freq].spec.maxval, 20000.0, "Param spec maxval should be set to 20000");
+        this.assertFloatEquals(pctrl.params[\freq].param.spec.minval, 20.0, "Param spec minval should be set to 20");
+        this.assertFloatEquals(pctrl.params[\freq].param.spec.maxval, 20000.0, "Param spec maxval should be set to 20000");
 
         pctrl.setRaw(\freq, 880);
         this.assertFloatEquals(pctrl.params[\freq].source, 880.0, "Param source should be updated to 880");

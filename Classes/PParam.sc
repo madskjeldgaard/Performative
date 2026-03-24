@@ -48,6 +48,10 @@ Pparam : PatternProxy{
         param.spec_(newSpec);
     }
 
+    spec{
+        ^param.spec
+    }
+
     // Set without spec
     setRaw{|value|
         param.setRaw(value);
