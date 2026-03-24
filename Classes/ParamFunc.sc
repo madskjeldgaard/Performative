@@ -1,54 +1,4 @@
 // ParamFunc and ParamFuncSet are classes for managing parameters with associated callback functions and specs. They allow you to define parameters that automatically call a function when their value changes, and to manage collections of such parameters with the ability to save and restore snapshots of their states.
-
-// It's basically the same as Pparam, but instead of a pattern it contains a function that is called when the parameter changes.
-/*
-
-(
-p = ParamFunc.new(
-    {|mapped, raw|
-        "New values. Mapped to spec range: %, raw: %".format(mapped,raw).postln
-    },
-    [10.0,20000.0,\exp].asSpec
-);
-
-p.set(0.1);
-p.set(0.25);
-p.set(0.5);
-p.set(0.75);
-p.randomize();
-)
-
-Also works with ArrayedSpecs:
-
-(
-p = ParamFunc.new(
-    {|mapped, raw|
-        "New values. Mapped to spec range: %, raw: %".format(mapped,raw).postln
-    },
-    [\one, \two, \three]
-);
-
-p.set(0.1);
-p.set(0.25);
-p.set(0.5);
-p.set(0.75);
-p.randomize()
-)
-
-// With list of specs
-(
-var specList = [\freq.asSpec, \midinote.asSpec, [0,10].asSpec];
-p = ParamFunc.new(
-    {|mapped, raw|
-        "New values. Mapped to spec range: %, raw: %".format(mapped,raw).postln
-    },
-    specList
-);
-
-p.set([0.5, 0.25, 0.85]);
-p.randomize();
-)
-*/
 ParamFunc {
     var <func, <spec, <source, <normalizedValue;
     var <isListOfSpecs = false;
@@ -141,7 +91,7 @@ ParamFunc {
         });
 
         if(value != lastRawValue) {
-            func.value(value, value); // raw value for both
+            func.value(value, this); // raw value for both
             lastRawValue = value;
         };
 
@@ -158,7 +108,7 @@ ParamFunc {
                 var mapped = spec.map(value);
                 source = mapped;
                 if(mapped != lastRawValue) {
-                    func.value(mapped, value); // mapped and raw
+                    func.value(mapped, this); // mapped and raw
                     lastRawValue = mapped;
                 };
             }, {
@@ -169,7 +119,7 @@ ParamFunc {
                     var mapped = spec.collect{|specItem, index| specItem.map(value[index])};
                     source = mapped;
                     if(mapped != lastRawValue) {
-                        func.value(mapped, value); // mapped and raw
+                        func.value(mapped, this); // mapped and raw
                         lastRawValue = mapped;
                     };
                 })
@@ -179,7 +129,7 @@ ParamFunc {
             "No spec found for %. Using unipolar".format(this.class.name).warn;
             source = mapped;
             if(mapped != lastRawValue) {
-                func.value(mapped, value);
+                func.value(mapped, this);
                 lastRawValue = mapped;
             }
         };
@@ -222,7 +172,7 @@ ParamFunc {
                     source = spec.collect{|specItem| specItem.randomValue };
                 });
                 if(source != lastRawValue) {
-                    func.value(source, source); // mapped and raw are the same in this case
+                    func.value(source, this); // mapped and raw are the same in this case
                     lastRawValue = source;
                 };
             }, {
@@ -245,7 +195,7 @@ TestParamFunc : PerformativeTest {
     }
 
     test_lock{
-        var pf = ParamFunc({|mapped, raw| }, [0, 10].asSpec);
+        var pf = ParamFunc({|mapped, obj| }, [0, 10].asSpec);
         pf.lock(true);
         pf.set(0.5);
         this.assertEquals(pf.value, 0, "Value should not change when locked");
@@ -257,7 +207,7 @@ TestParamFunc : PerformativeTest {
     test_changeCallbacks {
         var pfs;
         var called = false;
-        var pf = ParamFunc({|mapped, raw| }, [0, 10].asSpec);
+        var pf = ParamFunc({|mapped, obj| }, [0, 10].asSpec);
         pf.changeCallback_({|paramFunc| "Change callback called with value: %".format(paramFunc.value).postln; called = true; });
         pf.set(0.5);
         this.assert(called, "Change callback should be called when value changes");
@@ -266,7 +216,7 @@ TestParamFunc : PerformativeTest {
         called = false;
         pfs = ParamFuncSet();
         pfs.changeCallback_({|paramFuncSet| "ParamFuncSet change callback called".postln; called = true; });
-        pfs.add(\test, {|mapped, raw| }, [0, 1].asSpec);
+        pfs.add(\test, {|mapped, obj| }, [0, 1].asSpec);
         pfs.at(\test).set(0.5);
         this.assert(called, "ParamFuncSet change callback should be called when a ParamFunc changes");
     }
@@ -275,15 +225,15 @@ TestParamFunc : PerformativeTest {
         var pf, pf2, pf3;
 
         // For spec value
-        pf = ParamFunc({|mapped, raw| }, [3, 10].asSpec);
+        pf = ParamFunc({|mapped, obj| }, [3, 10].asSpec);
         this.assertEquals(pf.value, 3, "Default value should be the minval of the spec");
 
         // For arrayed spec value
-        pf2 = ParamFunc({|mapped, raw| }, [\one, \two, \three]);
+        pf2 = ParamFunc({|mapped, obj| }, [\one, \two, \three]);
         this.assertEquals(pf2.value, \one, "Default value should be the first element of the arrayed spec");
 
         // For speclist
-        pf3 = ParamFunc({|mapped, raw| }, [\freq.asSpec, \amp.asSpec]);
+        pf3 = ParamFunc({|mapped, obj| }, [\freq.asSpec, \amp.asSpec]);
         this.assert(pf3.value.isArray, "Value should be an array");
         this.assertEquals(pf3.value.size, 2, "Array size should be 2");
         this.assertFloatEquals(pf3.value[0], \freq.asSpec.default, "First default value should match freq spec default");
@@ -292,36 +242,34 @@ TestParamFunc : PerformativeTest {
 
     test_basicSpecMapping {
         var called = false;
-        var mappedVal, rawVal;
-        var pf = ParamFunc({|mapped, raw|
+        var mappedVal, objVal;
+        var pf = ParamFunc({|mapped, obj|
             called = true;
             mappedVal = mapped;
-            rawVal = raw;
         }, [0, 10].asSpec);
 
         pf.set(0.5);
         this.assert(called, "Callback should be called");
         this.assertEquals(pf.value, 5, "Mapped value should be 5");
         this.assertEquals(mappedVal, 5, "Callback mapped value should be 5");
-        this.assertEquals(rawVal, 0.5, "Callback raw value should be 0.5");
         this.assertFloatEquals(pf.getUnmapped, 0.5, "Unmapped value should be 0.5");
     }
 
     test_setRaw {
-        var pf = ParamFunc({|mapped, raw| }, [0, 10].asSpec);
+        var pf = ParamFunc({|mapped, obj| }, [0, 10].asSpec);
         pf.setRaw(7);
         this.assertEquals(pf.value, 7, "Raw value should be 7");
         this.assertFloatEquals(pf.getUnmapped, 0.7, "Unmapped value should be 0.7");
     }
 
     test_arrayedSpec {
-        var pf = ParamFunc({|mapped, raw| }, [\hey, \ho, \yo]);
+        var pf = ParamFunc({|mapped, obj| }, [\hey, \ho, \yo]);
         pf.set(1.0);
         this.assertEquals(pf.value, \yo, "Value should be yo. Got: %".format(pf.value));
     }
 
     test_specList {
-        var pf = ParamFunc({|mapped, raw| }, [\freq.asSpec, \amp.asSpec]);
+        var pf = ParamFunc({|mapped, obj| }, [\freq.asSpec, \amp.asSpec]);
         pf.set([0.5, 0.5]);
         this.assert(pf.value.isArray, "Value should be an array");
         this.assertEquals(pf.value.size, 2, "Array size should be 2");
@@ -330,14 +278,14 @@ TestParamFunc : PerformativeTest {
     }
 
     test_randomize {
-        var pf = ParamFunc({|mapped, raw| }, [0, 1].asSpec);
+        var pf = ParamFunc({|mapped, obj| }, [0, 1].asSpec);
         pf.randomize;
         this.assert(pf.value >= 0 and: { pf.value <= 1 }, "Randomized value should be in range");
     }
 
     test_ParamFuncSet_add_and_at {
         var pfs = ParamFuncSet();
-        pfs.add(\freq, {|mapped, raw| }, [10, 1000, \exp].asSpec);
+        pfs.add(\freq, {|mapped, obj| }, [10, 1000, \exp].asSpec);
         this.assert(pfs.at(\freq).notNil, "ParamFuncSet should contain freq key");
     }
 
@@ -346,8 +294,8 @@ TestParamFunc : PerformativeTest {
         var pfs = ParamFuncSet();
         var freqSpec = [10, 1000, \exp].asSpec;
         var ampSpec = \amp.asSpec;
-        pfs.add(\freq, {|mapped, raw| }, freqSpec);
-        pfs.add(\amp, {|mapped, raw| }, ampSpec);
+        pfs.add(\freq, {|mapped, obj| }, freqSpec);
+        pfs.add(\amp, {|mapped, obj| }, ampSpec);
         pfs.at(\freq).set(0.1);
         pfs.at(\amp).set(0.9);
         pfs.snapshot(\snap1);
@@ -362,7 +310,7 @@ TestParamFunc : PerformativeTest {
 
     test_remove_and_removeSnapshot {
         var pfs = ParamFuncSet();
-        pfs.add(\freq, {|mapped, raw| }, [10, 1000, \exp].asSpec);
+        pfs.add(\freq, {|mapped, obj| }, [10, 1000, \exp].asSpec);
         pfs.snapshot(\snap1);
         pfs.remove(\freq);
         this.assert(pfs.at(\freq).isNil, "Removed key should be nil");

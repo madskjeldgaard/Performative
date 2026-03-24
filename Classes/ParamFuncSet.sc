@@ -1,34 +1,4 @@
 // A collection of ParamFuncs with the ability to save/restore snapshots
-/*
-
-p = ParamFuncSet();
-p.add(\freq, {|mapped, raw| "Freq mapped: %, raw: %".format(mapped, raw).postln}, [10.0, 20000.0, \exp].asSpec);
-p[\freq].set(0.5);
-
-// More advanced:
-(
-p = ParamFuncSet();
-p.add(\freq, {|mapped, raw| "Freq mapped: %, raw: %".format(mapped, raw).postln}, [10.0, 20000.0, \exp].asSpec);
-p.add(\amp, {|mapped, raw| "Amp mapped: %, raw: %".format(mapped, raw).postln}, \amp.asSpec);
-p.add(\yoyoy, {|mapped, raw| "Yoyo mapped: %, raw: %".format(mapped, raw).postln}, [\hey, \yo, \hi]);
-p.add(\specsss, {|mapped, raw| "Specsss mapped: %, raw: %".format(mapped, raw).postln}, [[0,1].asSpec, \cutoff.asSpec]);
-)
-
-p.randomizeAll()
-p.snapshot(\one)
-
-p.snapshots[\one]
-
-p.randomizeAll()
-p.snapshot(\two)
-
-p.restoreSnapshot(\one)
-
-p[\yoyoy].setRaw(\hey);
-
-p[\freq].set(0.5);
-
-*/
 ParamFuncSet[]{
     var <params;
     var <snapshots;
@@ -259,7 +229,7 @@ TestParamFuncSet : PerformativeTest {
 
     test_paramlock{
         var pfs = ParamFuncSet();
-        pfs.add(\freq, {|mapped, raw| }, [10, 1000].asSpec);
+        pfs.add(\freq, {|mapped, obj| }, [10, 1000].asSpec);
         pfs.lockParams(\freq);
         pfs.at(\freq).setRaw(10);
         this.assertEquals(pfs.at(\freq).value, 10, "Value should not change when locked");
@@ -274,14 +244,14 @@ TestParamFuncSet : PerformativeTest {
 
     test_add_and_at {
         var pfs = ParamFuncSet();
-        pfs.add(\freq, {|mapped, raw| }, [10, 1000, \exp].asSpec);
+        pfs.add(\freq, {|mapped, obj| }, [10, 1000, \exp].asSpec);
         this.assert(pfs.at(\freq).notNil, "ParamFuncSet should contain freq key");
     }
 
     test_randomizeAll {
         var pfs = ParamFuncSet();
-        pfs.add(\freq, {|mapped, raw| }, [10, 1000, \exp].asSpec);
-        pfs.add(\amp, {|mapped, raw| }, \amp.asSpec);
+        pfs.add(\freq, {|mapped, obj| }, [10, 1000, \exp].asSpec);
+        pfs.add(\amp, {|mapped, obj| }, \amp.asSpec);
         pfs[\freq].setRaw(0.5);
         pfs.randomizeAll();
         this.assert(pfs.at(\freq).value >= 10 and: { pfs.at(\freq).value <= 1000 }, "Randomized freq should be in range");
@@ -293,8 +263,8 @@ TestParamFuncSet : PerformativeTest {
         var pfs = ParamFuncSet();
         var freqSpec = [10, 1000, \exp].asSpec;
         var ampSpec = \amp.asSpec;
-        pfs.add(\freq, {|mapped, raw| }, freqSpec);
-        pfs.add(\amp, {|mapped, raw| }, ampSpec);
+        pfs.add(\freq, {|mapped, obj| }, freqSpec);
+        pfs.add(\amp, {|mapped, obj| }, ampSpec);
         pfs.at(\freq).set(0.1);
         pfs.at(\amp).set(0.9);
         pfs.snapshot(\snap1);
@@ -309,7 +279,7 @@ TestParamFuncSet : PerformativeTest {
 
     test_remove_and_removeSnapshot {
         var pfs = ParamFuncSet();
-        pfs.add(\freq, {|mapped, raw| }, [10, 1000, \exp].asSpec);
+        pfs.add(\freq, {|mapped, obj| }, [10, 1000, \exp].asSpec);
         pfs.snapshot(\snap1);
         pfs.remove(\freq);
         this.assert(pfs.at(\freq).isNil, "Removed key should be nil");
@@ -321,8 +291,8 @@ TestParamFuncSet : PerformativeTest {
         var tmpdir = PathName.tmp;
         var filePath = tmpdir +/+ "paramFuncSetTest.scd";
         var pfs = ParamFuncSet();
-        pfs.add(\freq, {|mapped, raw| }, [10, 1000 , \exp].asSpec);
-        pfs.add(\amp, {|mapped, raw| }, \amp.asSpec);
+        pfs.add(\freq, {|mapped, obj| }, [10, 1000 , \exp].asSpec);
+        pfs.add(\amp, {|mapped, obj| }, \amp.asSpec);
         pfs.at(\freq).set(0.5);
         pfs.at(\amp).set(0.5);
         pfs.savePresetsToFile(filePath);
@@ -337,16 +307,16 @@ TestParamFuncSet : PerformativeTest {
         var filePath = tmpdir +/+ "paramFuncSetTest.scd";
         var pfs = ParamFuncSet();
         var loadedPfs;
-        pfs.add(\freq, {|mapped, raw| }, [10, 1000 , \exp].asSpec);
-        pfs.add(\amp, {|mapped, raw| }, \amp.asSpec);
+        pfs.add(\freq, {|mapped, obj| }, [10, 1000 , \exp].asSpec);
+        pfs.add(\amp, {|mapped, obj| }, \amp.asSpec);
         pfs.at(\freq).set(0.5);
         pfs.at(\amp).set(0.5);
         pfs.savePresetsToFile(filePath);
 
         // PF needs to define the paramfuncs before presets can be loaded
         loadedPfs = ParamFuncSet();
-        loadedPfs.add(\freq, {|mapped, raw| }, [10, 1000 , \exp].asSpec);
-        loadedPfs.add(\amp, {|mapped, raw| }, \amp.asSpec);
+        loadedPfs.add(\freq, {|mapped, obj| }, [10, 1000 , \exp].asSpec);
+        loadedPfs.add(\amp, {|mapped, obj| }, \amp.asSpec);
         loadedPfs.loadPreset(filePath);
         this.assert(loadedPfs.at(\freq).notNil, "Loaded ParamFuncSet should contain freq key", onFailure: {
                 "Loaded ParamFuncSet : %".format(loadedPfs.params.keys).postln;

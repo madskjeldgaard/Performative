@@ -35,14 +35,14 @@ a.map(1.0) // -> yo
 
 ![ParamFunc GUI](images/paramfunc.png)
 
-An object that represents a _parameter_: It has a spec defining it's range, etc., an automated gui, randomization, locking (to avoid parameters being changed by randomization or otherwise). It's defined with a callback function that is called every time the output parameter changes. This component and it's GUI is used to represent any single parameter throughout the library.
+An object that represents a _parameter_: It has a spec defining it's range, etc., an automated gui, randomization, locking (to avoid parameters being changed by randomization or snapshot recalls / presets (see further down)). It's defined with a callback function that is called every time the output parameter changes and passed the mapped value and the object itself. This component and it's GUI is used to represent any single parameter throughout the library.
 
 
 ```supercollider
 (
 p = ParamFunc.new(
-    {|mapped, raw|
-        "New values. Mapped to spec range: %, raw: %".format(mapped,raw).postln
+    {|mapped, obj|
+        "New values. Mapped to spec range: %, obj: %".format(mapped,obj).postln
     },
     [10.0,20000.0,\exp].asSpec
 );
@@ -126,9 +126,9 @@ The def-version is simply called ParamsDef.
 ```supercollider
 (
 p = ParamFuncSet();
-p.add(\freq, {|mapped, raw| "Freq mapped: %, raw: %".format(mapped, raw).postln}, [10.0, 20000.0, \exp].asSpec);
-p.add(\amp, {|mapped, raw| "Amp mapped: %, raw: %".format(mapped, raw).postln}, \amp.asSpec);
-p.add(\yoyoy, {|mapped, raw| "Yoyo mapped: %, raw: %".format(mapped, raw).postln}, [\hey, \yo, \hi]);
+p.add(\freq, {|mapped, obj| "Freq mapped: %, obj: %".format(mapped, obj).postln}, [10.0, 20000.0, \exp].asSpec);
+p.add(\amp, {|mapped, obj| "Amp mapped: %, obj: %".format(mapped, obj).postln}, \amp.asSpec);
+p.add(\yoyoy, {|mapped, obj| "Yoyo mapped: %, obj: %".format(mapped, obj).postln}, [\hey, \yo, \hi]);
 p.gui;
 )
 
