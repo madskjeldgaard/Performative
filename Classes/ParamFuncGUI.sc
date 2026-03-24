@@ -6,7 +6,7 @@
         var controls; // Dictionary to store control references for external updates
 
         // Fixed sizes for consistency
-        var labelWidth = 80;
+        var labelWidth = 140;
         var numberBoxWidth = 70;
 
         // Create view with optional parent
@@ -20,7 +20,7 @@
         controls = IdentityDictionary.new;
 
         layout = HLayout.new(
-            [StaticText.new().string_(key).fixedWidth_(labelWidth), s: 1]
+            [StaticText.new().string_(key).fixedWidth_(labelWidth), s: 2]
         );
 
         case
