@@ -371,7 +371,16 @@ ParamFuncSetGui {
     }
 
     makeParameterView { |key, paramFunc|
-        ^paramFunc.asView(window, key: key);
+        var paramView = paramFunc.asView(window, key: key);
+        var controls = paramView.controls;
+
+        paramView = paramView.view;
+
+        if(controls.notNil) {
+            paramViews.put(key, controls);
+        };
+
+        ^paramView;
     }
 
     set_ { |newSet|

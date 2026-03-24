@@ -3,6 +3,7 @@
         var view, layout;
         var paramVal, valueBox, slider, valueDisplay, randomizeButton, lockButton;
         var minval, maxval;
+        var controls; // Dictionary to store control references for external updates
 
         // Fixed sizes for consistency
         var labelWidth = 80;
@@ -16,6 +17,7 @@
         };
 
         paramVal = this.value;
+        controls = IdentityDictionary.new;
 
         layout = HLayout.new(
             [StaticText.new().string_(key).fixedWidth_(labelWidth), s: 1]
@@ -44,6 +46,12 @@
                 this.setRaw(val);
             });
 
+            // Store controls for external updates
+            controls[\type] = \array;
+            controls[\slider] = slider;
+            controls[\display] = valueDisplay;
+            controls[\spec] = spec;
+
             layout.add(valueDisplay);
             layout.add(slider, 4);
         }
@@ -53,11 +61,13 @@
             var multiLayout = VLayout.new();
             var sliders = List.new();
             var boxes = List.new();
+            var subControls = List.new();
 
             spec.do { |specItem, index|
                 var itemLayout = HLayout.new();
                 var itemVal = paramVal[index];
                 var itemSlider, itemBox;
+                var itemControls;
 
                 // Get min and max from the spec
                 minval = if(specItem.respondsTo(\minval)) { specItem.minval } { 0 };
@@ -124,7 +134,15 @@
                 multiLayout.add(itemLayout);
                 sliders.add(itemSlider);
                 boxes.add(itemBox);
+
+                itemControls = (type: \number, slider: itemSlider, numBox: itemBox, spec: specItem);
+                subControls.add(itemControls);
             };
+
+            // Store controls for external updates
+            controls[\type] = \specList;
+            controls[\subViews] = subControls;
+            controls[\spec] = spec;
 
             layout = multiLayout;
         }
@@ -182,6 +200,12 @@
             )
             .fixedWidth_(numberBoxWidth);
 
+            // Store controls for external updates
+            controls[\type] = \number;
+            controls[\slider] = slider;
+            controls[\numBox] = valueBox;
+            controls[\spec] = spec;
+
             layout.add(valueBox);
             layout.add(slider, 4);
         }
@@ -189,18 +213,56 @@
             "'%' parameter ignored".format(this.class).warn;
         };
 
-        // Add "r" momentary button that calls .randomize on the ParamFunc
+        // Add "rand" momentary button that calls .randomize on the ParamFunc
         randomizeButton = Button.new()
         .states_([["rand"]])
         .action_({
             this.randomize;
 
-            slider.value_(this.getUnmapped);
-            if(valueBox.notNil) {
-                valueBox.value_(this.value);
+            // Update the GUI based on control type
+            if(controls[\type] == \number) {
+                var newVal = this.value;
+                var specObj = controls[\spec];
+                slider.value_(
+                    if(specObj.respondsTo(\unmap)) {
+                        specObj.unmap(newVal)
+                    } {
+                        var minval = specObj.respondsTo(\minval) !? { specObj.minval } ?? 0;
+                        var maxval = specObj.respondsTo(\maxval) !? { specObj.maxval } ?? 1;
+                        (newVal - minval) / (maxval - minval)
+                    }
+                );
+                valueBox.value = newVal;
             };
-            if(valueDisplay.notNil) {
-                valueDisplay.string_(this.value.asString);
+
+            if(controls[\type] == \array) {
+                var newVal = this.value;
+                var specObj = controls[\spec];
+                var arrayChoices = specObj.array;
+                var idx = arrayChoices.indexOf(newVal) ? 0;
+                var numChoices = arrayChoices.size;
+                slider.value_(idx / (numChoices - 1).max(0));
+                controls[\display].string_(newVal.asString);
+            };
+
+            if(controls[\type] == \specList) {
+                var newVals = this.value;
+                var subViews = controls[\subViews];
+                var specObj = controls[\spec];
+                subViews.do { |subView, i|
+                    var specItem = specObj[i];
+                    var val = newVals[i];
+                    subView[\slider].value_(
+                        if(specItem.respondsTo(\unmap)) {
+                            specItem.unmap(val)
+                        } {
+                            var minval = specItem.respondsTo(\minval) !? { specItem.minval } ?? 0;
+                            var maxval = specItem.respondsTo(\maxval) !? { specItem.maxval } ?? 1;
+                            (val - minval) / (maxval - minval)
+                        }
+                    );
+                    subView[\numBox].value = val;
+                };
             };
         });
 
@@ -212,7 +274,6 @@
         ])
         .action_({|obj|
             var val = obj.value;
-
             if(val == 0) {
                 this.lock(false)
             } {
@@ -220,7 +281,7 @@
             };
         });
 
-        layout.add(*[randomizeButton,  s: 1]);
+        layout.add(*[randomizeButton, s: 1]);
         layout.add(*[lockButton, s: 1]);
 
         // Add the layout to the view
@@ -235,13 +296,14 @@
             view.children.do{ |c| c.font = font };
         };
 
-        ^view
+        // Store controls in the view for external access
+        ^(view: view, controls: controls);
     }
 
     gui{|key="parameter"|
         var window = Window.new("%".format(key));
         window.layout = VLayout.new();
-        window.layout.add(this.asView(window, key: key));
+        window.layout.add(this.asView(window, key: key).view);
         window.front();
     }
 }
