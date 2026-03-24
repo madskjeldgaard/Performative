@@ -49,10 +49,10 @@ p.set([0.5, 0.25, 0.85]);
 p.randomize();
 )
 */
-// FIXME: Only call callback if value actually changes?
 ParamFunc {
     var <func, <spec, <source, <normalizedValue;
     var <isListOfSpecs = false;
+    var <locked = false;
     var <controlMode;
     var <lastRawValue;
     var changeCallback; // Callback when it is changed
@@ -129,17 +129,20 @@ ParamFunc {
     }
 
     setRaw { |value|
+      if(locked.not, {
         source = value;
         normalizedValue = if(controlMode != \specList, {spec.unmap(value)}, {
-            // Special case: specList, it's a list of control specs
-            spec.collect{|specItem| specItem.unmap(value) }
+          // Special case: specList, it's a list of control specs
+          spec.collect{|specItem| specItem.unmap(value) }
         });
-        func.value(value, value); // raw value for both
+      func.value(value, value); // raw value for both
 
-        this.changed();
+      this.changed();
+      })
     }
 
     set { |value|
+      if(locked.not, {
         normalizedValue = value;
 
         if (spec.notNil) {
@@ -174,6 +177,7 @@ ParamFunc {
         };
 
         this.changed();
+      })
     }
 
     // Manually trigger callback with latest values
@@ -189,6 +193,10 @@ ParamFunc {
 
     getUnmapped {
         ^spec.unmap(source);
+    }
+
+    lock{|lockParam=true|
+      locked = lockParam
     }
 
     randomize {
