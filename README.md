@@ -194,3 +194,5 @@ To test all classes, in SuperCollider run:
 ```supercollider
 PerformativeTest.runAll();
 ```
+
+If you experience bugs or issues, please open an issue on [codeberg](https://codeberg.org/madskjeldgaard/Performative/).
