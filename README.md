@@ -44,7 +44,11 @@ p = ParamFunc.new(
     {|mapped, obj|
         "New values. Mapped to spec range: %, obj: %".format(mapped,obj).postln
     },
+
+    // A spec with fluid controls
     [10.0,20000.0,\exp].asSpec
+    // Alternative: A spec with fixed choices:
+    // [261, 523, 784, 1046, 1308]
 );
 
 p.set(0.1);
