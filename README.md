@@ -2,6 +2,10 @@
 
 This library is a set of tools designed to help you design performative instruments and/or compositions in SuperCollider.
 
+One of the main goals of this library is to create a framework for managing and designing *musical perameters*: Parameters that contain compositional decision making and encourage structural improvisation.
+
+Interacting with the parameters should be as easy as possible. For this reason, all of them can be either set with direct values or using a normalized range of floating point numbers as inputs (0.0 to 1.0) — this makes it simple to map them to controllers, and it allows the creation of automatic GUI's, randomization, snapshots and other convenient tricks for interacting with them in complex and fun ways.
+
 ## Support
 
 Making this took a long time and effort. If you find it useful, please consider supporting with a donation:
@@ -22,6 +26,8 @@ Generally: Most classes have a GUI and you can choose between the class and it's
 [Specs in the standard supercollider class](https://doc.sccode.org/Classes/ControlSpec.html) library describe a range, units, warping, default value, etc. for a simple number. These objects are useful for creating GUI's and generally abstracting a parameter's values to a normalized range of 0.0 to 1.0.
 
 *Performative* adds an extra kind of spec called ArrayedSpec which lets you use a list of choices of objects of any kind, instead of a range of numbers.
+
+An ArrayedSpec can contain *any object*, which allows enormous flexibility in the parameters in this library. 
 
 ```supercollider
 a = ArrayedSpec([\hey, \ho, \yo])
@@ -76,6 +82,33 @@ p.quant_(1);
 
 s.waitForBoot{
     Pbind(\freq, p).play;
+}
+)
+
+p.gui;
+```
+
+Since a parameter may contain an array of any kind of object, it also allows making a parameter consisting of patterns or a mix of objects.
+
+Here is an example of a parameter that contains melodies and chords:
+
+```supercollider
+(
+// Use patterns for the parameter
+var choices = [
+    0,
+    4,
+    5,
+    Pseq([0,2,4],inf),
+    Pseq([5,4,2],inf),
+    Pseq([0,5,4,2,5,7],inf),
+    [0,2,4,6]
+];
+
+p = Pparam.new(choices.first, choices);
+
+s.waitForBoot{
+    Pbind(\degree, p, \dur, 0.25).play;
 }
 )
 
