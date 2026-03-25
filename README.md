@@ -179,7 +179,7 @@ p.snapshot(\two)
 
 p.restoreSnapshot(\one)
 
-p[\yoyoy].setRaw(\hey);
+p[\yoyoy].set(\hey);
 
 p[\freq].set(0.5);
 
