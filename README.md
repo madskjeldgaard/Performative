@@ -19,7 +19,7 @@ Open up SuperCollider and evaluate the following line of code:
 
 ## Classes
 
-Generally: Most classes have a GUI and you can choose between the class and it's def-style cousing - the two versions being the same, but the latter being stored in a global dictionary for easy access for live-coding.
+Generally: Most classes have a GUI and you can choose between the class and it's def-style cousin - the two versions being the same, but the latter being stored in a global dictionary for easy access for live-coding.
 
 ### Specs
 
@@ -41,7 +41,7 @@ a.map(1.0) // -> yo
 
 ![ParamFunc GUI](images/paramfunc.png)
 
-An object that represents a _parameter_: It has a spec defining it's range, etc., an automated gui, randomization, locking (to avoid parameters being changed by randomization or snapshot recalls / presets (see further down)). It's defined with a callback function that is called every time the output parameter changes and passed the mapped value and the object itself. This component and it's GUI is used to represent any single parameter throughout the library.
+An object that represents a _parameter_: It has a spec defining it's range, etc., an automated gui, randomization, locking (to avoid parameters being changed by randomization or snapshot recalls / presets (see further down)). It's defined with a callback function that is called every time the output parameter changes and passed the mapped value and the object itself. This component and its GUI is used to represent any single parameter throughout the library.
 
 
 ```supercollider
@@ -70,7 +70,7 @@ p.gui;
 
 ![Pparam](images/pparam.png)
 
-Pparam and it's def-style cousin PparamDef are pattern-based parameters. They can be used to allow live-coding/changing a parameter inside a pattern for example, to make that pattern controllable from the outside. It has the same gui as ParamFunc and is a standard PatternProxy, so it's changes may be quantized to the clock to synchronize it with your music.
+Pparam and it's def-style cousin PparamDef are pattern-based parameters. They can be used to allow live-coding/changing a parameter inside a pattern for example, to make that pattern controllable from the outside. It has the same gui as ParamFunc and is a standard PatternProxy, so its changes may be quantized to the clock to synchronize it with your music.
 
 ```supercollider
 (
@@ -183,4 +183,14 @@ p[\yoyoy].set(\hey);
 
 p[\freq].set(0.5);
 
+```
+
+## Development
+
+To make this library as robust as possible, everything is automatically tested with unit tests. Any time changes are made, it should be reflected in the test-suite to make sure that this remains a solid and trust-worthy foundation for performance- and composition-setups.  
+
+To test all classes, in SuperCollider run: 
+
+```supercollider
+PerformativeTest.runAll();
 ```
