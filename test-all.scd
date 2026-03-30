@@ -1,4 +1,4 @@
 PerformativeTest.runAll();
 
 
-TestPparam.run
+TestPcontrol.run

@@ -55,10 +55,15 @@ Pcontrol [] {
 
     // Set a raw value of a param
     setOne{|key, value|
+        if(value.notNil, {
+
         if(params[key].notNil, {
             params[key].set(value);
         }, {
             "%: param % not found".format(this.class.name, key).warn;
+        })
+        }, {
+            "%: value for % cannot be nil".format(this.class.name, key).warn;
         })
     }
 
@@ -75,11 +80,15 @@ Pcontrol [] {
 
     // Map using a control spec
     mapOne{|key, value|
+        if(value.notNil, {
         if(params[key].notNil, {
             params[key].map(value);
             this.changed(key, [key, value]);
         }, {
             "%: param % not found".format(this.class.name, key).warn;
+        })
+        }, {
+            "%: value for % cannot be nil".format(this.class.name, key).warn;
         })
     }
 
@@ -446,6 +455,14 @@ TestPcontrol : PerformativeTest {
         this.assert(pctrl.patternProxy.source.isKindOf(Pbind), "Pattern proxy source should be a Pbind");
         this.assert(pctrl.patternProxy.source == oldSource, "Pattern proxy source dur should be set to 0.2");
     }
+
+    test_set{
+        var pctrl = Pcontrol.new({Pbind()});
+        pctrl.addParam(\freq, 440, [20, 20000].asSpec);
+        pctrl.set(\freq, 880);
+        this.assertFloatEquals(pctrl.params[\freq].source, 880.0, "Param source should be updated to 880");
+    }
+
 
 
     // TODO: Test presets

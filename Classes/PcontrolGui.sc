@@ -615,7 +615,7 @@ PcontrolGui {
         this.filteredParams.keysValuesDo{ | key, spec |
             var val = pcontrol.params[key].source;
             val = func.value(val, spec);
-            pcontrol.setRawOne(key, val);
+            pcontrol.setOne(key, val);
         }
     }
 

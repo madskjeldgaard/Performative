@@ -34,7 +34,11 @@ ParamFuncSet[]{
     set{|key, value|
         var paramFunc = params[key];
         if(paramFunc.notNil) {
-            paramFunc.set(value);
+            if(value.notNil, {
+                paramFunc.set(value);
+            }, {
+                "ParamFuncSet: Cannot set nil value for key %".format(key).warn;
+            });
         } {
             "ParamFuncSet: No ParamFunc found for key %".format(key).warn;
         }
@@ -53,7 +57,7 @@ ParamFuncSet[]{
         params.put(key, newFunc);
 
         // C Paramfunc
-        newFunc.set(newFunc.value);
+        // newFunc.set(newFunc.value);
 
         this.changed();
     }

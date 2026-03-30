@@ -83,59 +83,65 @@ ParamFunc {
     }
 
     set { |value|
-      if(locked.not, {
-        source = value;
-        normalizedValue = if(controlMode != \specList, {spec.unmap(value)}, {
-          // Special case: specList, it's a list of control specs
-          spec.collect{|specItem| specItem.unmap(value) }
-        });
+        if(locked.not, {
+            if(value.notNil, {
+                source = value;
 
-        if(value != lastRawValue) {
-            func.value(value, this); // raw value for both
-            lastRawValue = value;
-        };
+                if(value != lastRawValue) {
+                    func.value(value, this); // raw value for both
+                    lastRawValue = value;
+                };
 
-      this.changed();
-      })
+                this.changed();
+
+            }, {
+                "ParamFunc: Can't set value to nil".error;
+            })
+        })
     }
 
     map { |value|
-      if(locked.not, {
-        normalizedValue = value;
+        if(value.notNil, {
 
-        if (spec.notNil) {
-            if(controlMode != \specList, {
-                var mapped = spec.map(value);
-                source = mapped;
-                if(mapped != lastRawValue) {
-                    func.value(mapped, this); // mapped and raw
-                    lastRawValue = mapped;
-                };
-            }, {
-                if(value.size != spec.size, {
-                    "ParamFunc: Value array should be same size as speclist array".error;
-                }, {
-                    // Special case: specList, it's a list of control specs
-                    var mapped = spec.collect{|specItem, index| specItem.map(value[index])};
+            if(locked.not, {
+                normalizedValue = value;
+
+                if (spec.notNil) {
+                    if(controlMode != \specList, {
+                        var mapped = spec.map(value);
+                        source = mapped;
+                        if(mapped != lastRawValue) {
+                            func.value(mapped, this); // mapped and raw
+                            lastRawValue = mapped;
+                        };
+                    }, {
+                        if(value.size != spec.size, {
+                            "ParamFunc: Value array should be same size as speclist array".error;
+                        }, {
+                            // Special case: specList, it's a list of control specs
+                            var mapped = spec.collect{|specItem, index| specItem.map(value[index])};
+                            source = mapped;
+                            if(mapped != lastRawValue) {
+                                func.value(mapped, this); // mapped and raw
+                                lastRawValue = mapped;
+                            };
+                        })
+                    });
+                } {
+                    var mapped = \uni.asSpec.map(value);
+                    "No spec found for %. Using unipolar".format(this.class.name).warn;
                     source = mapped;
                     if(mapped != lastRawValue) {
-                        func.value(mapped, this); // mapped and raw
+                        func.value(mapped, this);
                         lastRawValue = mapped;
-                    };
-                })
-            });
-        } {
-            var mapped = \uni.asSpec.map(value);
-            "No spec found for %. Using unipolar".format(this.class.name).warn;
-            source = mapped;
-            if(mapped != lastRawValue) {
-                func.value(mapped, this);
-                lastRawValue = mapped;
-            }
-        };
+                    }
+                };
 
-        this.changed();
-      })
+                this.changed();
+            })
+        }, {
+                "ParamFunc: Can't map value to nil".error;
+        })
     }
 
     // Manually trigger callback with latest values
@@ -146,11 +152,17 @@ ParamFunc {
     }
 
     getUnmapped {
-        ^spec.unmap(source);
+        ^this.unmap(source);
     }
 
     unmap{|value|
-        ^spec.unmap(value);
+        ^if(value.notNil && spec.notNil, {
+            "unmapping value % with spec %".format(value, spec).postln;
+            spec.unmap(value);
+        }, {
+            "ParamFunc: Can't unmap value to nil or no spec found".error;
+            nil
+        })
     }
 
     lock{|lockParam=true|

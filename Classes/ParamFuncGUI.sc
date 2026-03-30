@@ -43,7 +43,7 @@
                 var index = (sl.value * (numChoices - 1)).round(1).asInteger;
                 var val = arrayChoices[index];
                 valueDisplay.string_(val.asString);
-                this.setRaw(val);
+                this.set(val);
             });
 
             // Store controls for external updates
@@ -88,7 +88,7 @@
                     };
                     var currentVals = this.value.copy;
                     currentVals[index] = val;
-                    this.setRaw(currentVals);
+                    this.set(currentVals);
                     itemSlider.value_(
                         if(specItem.respondsTo(\unmap)) {
                             specItem.unmap(val)
@@ -125,7 +125,7 @@
                     var currentVals = this.value.copy;
                     currentVals[index] = val;
                     itemBox.value = val;
-                    this.setRaw(currentVals);
+                    this.set(currentVals);
                 });
 
                 itemLayout.add(itemBox);
@@ -170,7 +170,7 @@
                     minval + (obj.value * (maxval - minval))
                 };
                 valueBox.value = val;
-                this.setRaw(val);
+                this.set(val);
             });
 
             valueBox = NumberBox.new()
@@ -188,7 +188,7 @@
                         (val - minval) / (maxval - minval)
                     }
                 );
-                this.setRaw(val);
+                this.set(val);
             })
             .decimals_(3)
             .value_(
