@@ -21,6 +21,12 @@ Open up SuperCollider and evaluate the following line of code:
 
 Generally: Most classes have a GUI and you can choose between the class and it's def-style cousin - the two versions being the same, but the latter being stored in a global dictionary for easy access for live-coding.
 
+### Terminology
+
+All parameters respond to the following messages:
+- `.set`: Sets the value directly. Eg. for a frequency this could be 421.3 herz.
+- `.map`: Input a number between 0.0 and 1.0, automatically mapped to the appropriate range and set internally using the parameter's spec.
+
 ### Specs
 
 [Specs in the standard supercollider class](https://doc.sccode.org/Classes/ControlSpec.html) library describe a range, units, warping, default value, etc. for a simple number. These objects are useful for creating GUI's and generally abstracting a parameter's values to a normalized range of 0.0 to 1.0.

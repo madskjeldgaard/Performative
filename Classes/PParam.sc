@@ -52,13 +52,8 @@ Pparam : PatternProxy{
         ^param.spec
     }
 
-    // Set without spec
-    setRaw{|value|
-        param.setRaw(value);
-    }
-
     set{|value|
-        param.setRaw(value);
+        param.set(value);
     }
 
     value{

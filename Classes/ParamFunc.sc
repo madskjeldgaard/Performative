@@ -82,7 +82,7 @@ ParamFunc {
         this.changed();
     }
 
-    setRaw { |value|
+    set { |value|
       if(locked.not, {
         source = value;
         normalizedValue = if(controlMode != \specList, {spec.unmap(value)}, {
@@ -99,7 +99,7 @@ ParamFunc {
       })
     }
 
-    set { |value|
+    map { |value|
       if(locked.not, {
         normalizedValue = value;
 
@@ -143,10 +143,6 @@ ParamFunc {
 
     value {
         ^source;
-    }
-
-    map { |value|
-        this.set(value);
     }
 
     getUnmapped {
@@ -197,10 +193,10 @@ TestParamFunc : PerformativeTest {
     test_lock{
         var pf = ParamFunc({|mapped, obj| }, [0, 10].asSpec);
         pf.lock(true);
-        pf.set(0.5);
+        pf.map(0.5);
         this.assertEquals(pf.value, 0, "Value should not change when locked");
         pf.lock(false);
-        pf.set(0.5);
+        pf.map(0.5);
         this.assertEquals(pf.value, 5, "Value should change when unlocked");
     }
 
@@ -209,7 +205,7 @@ TestParamFunc : PerformativeTest {
         var called = false;
         var pf = ParamFunc({|mapped, obj| }, [0, 10].asSpec);
         pf.changeCallback_({|paramFunc| "Change callback called with value: %".format(paramFunc.value).postln; called = true; });
-        pf.set(0.5);
+        pf.map(0.5);
         this.assert(called, "Change callback should be called when value changes");
 
         // Test with the set
@@ -248,29 +244,29 @@ TestParamFunc : PerformativeTest {
             mappedVal = mapped;
         }, [0, 10].asSpec);
 
-        pf.set(0.5);
+        pf.map(0.5);
         this.assert(called, "Callback should be called");
         this.assertEquals(pf.value, 5, "Mapped value should be 5");
         this.assertEquals(mappedVal, 5, "Callback mapped value should be 5");
         this.assertFloatEquals(pf.getUnmapped, 0.5, "Unmapped value should be 0.5");
     }
 
-    test_setRaw {
+    test_set {
         var pf = ParamFunc({|mapped, obj| }, [0, 10].asSpec);
-        pf.setRaw(7);
+        pf.set(7);
         this.assertEquals(pf.value, 7, "Raw value should be 7");
         this.assertFloatEquals(pf.getUnmapped, 0.7, "Unmapped value should be 0.7");
     }
 
     test_arrayedSpec {
         var pf = ParamFunc({|mapped, obj| }, [\hey, \ho, \yo]);
-        pf.set(1.0);
+        pf.map(1.0);
         this.assertEquals(pf.value, \yo, "Value should be yo. Got: %".format(pf.value));
     }
 
     test_specList {
         var pf = ParamFunc({|mapped, obj| }, [\freq.asSpec, \amp.asSpec]);
-        pf.set([0.5, 0.5]);
+        pf.map([0.5, 0.5]);
         this.assert(pf.value.isArray, "Value should be an array");
         this.assertEquals(pf.value.size, 2, "Array size should be 2");
         this.assertFloatEquals(pf.value[0], \freq.asSpec.map(0.5), "First mapped value should match freq spec");
@@ -296,11 +292,11 @@ TestParamFunc : PerformativeTest {
         var ampSpec = \amp.asSpec;
         pfs.add(\freq, {|mapped, obj| }, freqSpec);
         pfs.add(\amp, {|mapped, obj| }, ampSpec);
-        pfs.at(\freq).set(0.1);
-        pfs.at(\amp).set(0.9);
+        pfs.at(\freq).map(0.1);
+        pfs.at(\amp).map(0.9);
         pfs.snapshot(\snap1);
-        pfs.at(\freq).set(0.9);
-        pfs.at(\amp).set(0.1);
+        pfs.at(\freq).map(0.9);
+        pfs.at(\amp).map(0.1);
         pfs.restoreSnapshot(\snap1);
         this.assertFloatEquals(pfs.at(\freq).getUnmapped, 0.1, "Restored freq should be 0.1");
         this.assertFloatEquals(pfs.at(\freq).value, freqSpec.map(0.1), "Restored freq should be mapped to spec");

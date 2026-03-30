@@ -17,7 +17,7 @@ ParamFuncSet[]{
     applyAll {
         params.keysValuesDo{ |name, paramFunc|
             var currentValue = paramFunc.value;
-            paramFunc.setRaw(currentValue);
+            paramFunc.set(currentValue);
         }
     }
 
@@ -40,15 +40,6 @@ ParamFuncSet[]{
         }
     }
 
-    setRaw{|key, value|
-        var paramFunc = params[key];
-        if(paramFunc.notNil) {
-            paramFunc.setRaw(value);
-        } {
-            "ParamFuncSet: No ParamFunc found for key %".format(key).warn;
-        }
-    }
-
     add { |key, func, controlspec|
         var newFunc, currentValue;
         if(params[key].notNil) {
@@ -62,7 +53,7 @@ ParamFuncSet[]{
         params.put(key, newFunc);
 
         // C Paramfunc
-        newFunc.setRaw(newFunc.value);
+        newFunc.set(newFunc.value);
 
         this.changed();
     }
@@ -117,7 +108,7 @@ ParamFuncSet[]{
                 var paramFunc = params[key];
 
                 if(paramFunc.notNil) {
-                    paramFunc.setRaw(value);
+                    paramFunc.set(value);
                 } {
                     "ParamFuncSet: No ParamFunc found for key % in snapshot %".format(key, name).warn;
                 }
@@ -160,7 +151,7 @@ ParamFuncSet[]{
             preset.currentValues.keysValuesDo{ |key, value|
                 var paramFunc = params[key];
                 if(paramFunc.notNil) {
-                    paramFunc.setRaw(value);
+                    paramFunc.set(value);
                 } {
                     "ParamFuncSet: No ParamFunc found for key % in preset file %".format(key, filePath).warn;
                 }
@@ -231,10 +222,10 @@ TestParamFuncSet : PerformativeTest {
         var pfs = ParamFuncSet();
         pfs.add(\freq, {|mapped, obj| }, [10, 1000].asSpec);
         pfs.lockParams(\freq);
-        pfs.at(\freq).setRaw(10);
+        pfs.at(\freq).set(10);
         this.assertEquals(pfs.at(\freq).value, 10, "Value should not change when locked");
         pfs.unlockParams(\freq);
-        pfs.at(\freq).setRaw(5);
+        pfs.at(\freq).set(5);
         this.assertEquals(pfs.at(\freq).value, 5, "Value should change when unlocked");
         // Test if randomization respects lock
         pfs.lockParams(\freq);
@@ -252,7 +243,7 @@ TestParamFuncSet : PerformativeTest {
         var pfs = ParamFuncSet();
         pfs.add(\freq, {|mapped, obj| }, [10, 1000, \exp].asSpec);
         pfs.add(\amp, {|mapped, obj| }, \amp.asSpec);
-        pfs[\freq].setRaw(0.5);
+        pfs[\freq].set(0.5);
         pfs.randomizeAll();
         this.assert(pfs.at(\freq).value >= 10 and: { pfs.at(\freq).value <= 1000 }, "Randomized freq should be in range");
         this.assertFloatEquals(pfs.at(\freq).getUnmapped, pfs.at(\freq).spec.unmap(pfs.at(\freq).value), "Unmapped value should match spec unmap of mapped value");
@@ -265,11 +256,11 @@ TestParamFuncSet : PerformativeTest {
         var ampSpec = \amp.asSpec;
         pfs.add(\freq, {|mapped, obj| }, freqSpec);
         pfs.add(\amp, {|mapped, obj| }, ampSpec);
-        pfs.at(\freq).set(0.1);
-        pfs.at(\amp).set(0.9);
+        pfs.at(\freq).map(0.1);
+        pfs.at(\amp).map(0.9);
         pfs.snapshot(\snap1);
-        pfs.at(\freq).set(0.9);
-        pfs.at(\amp).set(0.1);
+        pfs.at(\freq).map(0.9);
+        pfs.at(\amp).map(0.1);
         pfs.restoreSnapshot(\snap1);
         this.assertFloatEquals(pfs.at(\freq).getUnmapped, 0.1, "Restored freq should be 0.1");
         this.assertFloatEquals(pfs.at(\freq).value, freqSpec.map(0.1), "Restored freq should be mapped to spec");

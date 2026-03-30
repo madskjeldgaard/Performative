@@ -43,54 +43,25 @@ Pcontrol [] {
         ^params[key.asSymbol];
     }
 
-    setRaw{|...keyValuePairs|
+    set{|...keyValuePairs|
         keyValuePairs.arePairs.if({
             keyValuePairs.pairsDo{|key, value|
-                this.setRawOne(key, value)
+                this.setOne(key, value)
             }
         }, {
-            "setRaw expects pairs".warn;
+            "set expects pairs".warn;
         })
     }
 
     // Set a raw value of a param
-    setRawOne{|key, value|
+    setOne{|key, value|
         if(params[key].notNil, {
-            params[key].source = value;
+            params[key].set(value);
         }, {
             "%: param % not found".format(this.class.name, key).warn;
         })
     }
 
-
-    incrementRawOne{|key, value|
-        if(params[key].notNil, {
-            params[key].source = params[key].source + value;
-        }, {
-            "%: param % not found".format(this.class.name, key).warn;
-        })
-    }
-
-    // Add a value to a param's existing value
-    increment{|...keyValuePairs|
-        keyValuePairs.arePairs.if({
-            keyValuePairs.pairsDo{|key, value|
-                this.incrementRawOne(key, value)
-            }
-        }, {
-            "incrementRaw expects pairs".warn;
-        })
-    }
-
-    decrement{|...keyValuePairs|
-        keyValuePairs.arePairs.if({
-            keyValuePairs.pairsDo{|key, value|
-                this.increment(key, -1 * value)
-            }
-        }, {
-            "decrement expects pairs".warn;
-        })
-    }
 
     map{|...keyValuePairs|
         keyValuePairs.arePairs.if({
@@ -429,7 +400,7 @@ TestPcontrol : PerformativeTest {
         this.assertFloatEquals(pctrl.params[\freq].param.spec.minval, 20.0, "Param spec minval should be set to 20");
         this.assertFloatEquals(pctrl.params[\freq].param.spec.maxval, 20000.0, "Param spec maxval should be set to 20000");
 
-        pctrl.setRaw(\freq, 880);
+        pctrl.set(\freq, 880);
         this.assertFloatEquals(pctrl.params[\freq].source, 880.0, "Param source should be updated to 880");
 
         pctrl[\freq].map(0.5);
