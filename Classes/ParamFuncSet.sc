@@ -47,7 +47,6 @@ ParamFuncSet[]{
     add { |key, func, controlspec|
         var newFunc, currentValue;
         if(params[key].notNil) {
-            // "ParamFuncSet: Key % already exists. Removing.".warn;
             this.remove(key);
         };
 
@@ -57,7 +56,7 @@ ParamFuncSet[]{
         params.put(key, newFunc);
 
         // C Paramfunc
-        // newFunc.set(newFunc.value);
+        newFunc.set(newFunc.value);
 
         this.changed();
     }
