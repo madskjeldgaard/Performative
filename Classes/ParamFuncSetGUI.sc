@@ -435,8 +435,8 @@ ParamFuncSetGui {
         ^view;
     }
 
-    gui { |key="ParamFuncSet"|
-        var window = Window.new("ParamFuncSet GUI - %".format(key));
+    gui { |title="ParamFuncSet"|
+        var window = Window.new(title);
         window.layout = VLayout.new();
         window.layout.add(this.asView(window));
         window.front();
@@ -444,8 +444,8 @@ ParamFuncSetGui {
 }
 
 +ParamsDef{
-    gui {
-        var window = Window.new("%".format(key));
+    gui {|title|
+        var window = Window.new(title);
         window.layout = VLayout.new();
         window.layout.add(this.asView(window));
         window.front();
