@@ -323,4 +323,17 @@ TestParamFuncSet : PerformativeTest {
         File.delete(filePath);
     }
 
+    test_replace_existing_key {
+        var pfs = ParamFuncSet();
+        var originalFunc, originalSpec;
+        // Test if new func, new spec, etc. are replaced when adding new param
+        pfs.add(\freq, {|mapped, obj| }, [10, 1000 , \exp].asSpec);
+        originalFunc = pfs.at(\freq).func;
+        originalSpec = pfs.at(\freq).spec;
+        pfs.add(\freq, {|mapped, obj| 222}, \amp.asSpec);
+        this.assert(pfs.at(\freq).notNil, "ParamFuncSet should contain freq key after replacement");
+        this.assert(pfs.at(\freq).func != originalFunc, "Func should be replaced when adding existing key");
+        this.assert(pfs.at(\freq).spec != originalSpec, "Spec should be replaced when adding existing key");
+    }
+
 }
