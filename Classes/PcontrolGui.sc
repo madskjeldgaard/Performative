@@ -103,7 +103,8 @@ PcontrolGui {
 
     // update all GUI widgets from pcontrol state using stored control references
     updateAllParamsFromPcontrol {
-        pcontrol.params.keysValuesDo { |key, param|
+        pcontrol.params.keysValuesDo { |key, par|
+            var param = par.param;
             var val = param.source;
             var controls = paramViews[key];
 
@@ -258,7 +259,7 @@ PcontrolGui {
     }
 
     parameterChanged { | key, val |
-        var param = pcontrol.params[key];
+        var param = pcontrol.params[key].param;
         var controls = paramViews[key];
 
         if(controls.notNil) {
@@ -525,7 +526,7 @@ PcontrolGui {
 
         // Sort keys for consistent display
         pcontrol.params.keys.asArray.sort.do { |key|
-            var param = pcontrol.params[key];
+            var param = pcontrol.params[key].param;
             var spec = param.spec;
 
             // Skip excluded parameters
@@ -613,7 +614,7 @@ PcontrolGui {
 
     filteredParamsDo { | func |
         this.filteredParams.keysValuesDo{ | key, spec |
-            var val = pcontrol.params[key].source;
+            var val = pcontrol.params[key].param.source;
             val = func.value(val, spec);
             pcontrol.setOne(key, val);
         }

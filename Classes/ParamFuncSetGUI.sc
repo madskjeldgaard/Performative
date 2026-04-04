@@ -6,7 +6,7 @@ ParamFuncSetGui {
     var saveSnapshotButton, recallSnapshotButton, deleteSnapshotButton;
     var randomizeAllButton;
     var font, headerFont;
-    var deferDelta = 0.01;
+    var deferDelta = nil;
 
     // Callback functions for updates
     var setChangeFunc;
@@ -195,6 +195,10 @@ ParamFuncSetGui {
             );
             window.layout = this.makeViewLayout();
             window.view.children.do{ |c| c.font = font };
+            window.onClose = {
+                this.removeDependencies();
+                paramViews.clear;
+            };
 
             if(show) {
                 window.front;
@@ -439,6 +443,10 @@ ParamFuncSetGui {
         var window = Window.new(title);
         window.layout = VLayout.new();
         window.layout.add(this.asView(window));
+        window.onClose = {
+            // Clean up the GUI when the window is closed
+            window.view.removeAll;
+        };
         window.front();
     }
 }
@@ -449,5 +457,8 @@ ParamFuncSetGui {
         window.layout = VLayout.new();
         window.layout.add(this.asView(window));
         window.front();
+        window.onClose = {
+            window.view.removeAll;
+        };
     }
 }
