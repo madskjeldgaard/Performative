@@ -105,7 +105,7 @@ PcontrolGui {
     updateAllParamsFromPcontrol {
         pcontrol.params.keysValuesDo { |key, par|
             var param = par.param;
-            var val = param.source;
+            var val = param.value;
             var controls = paramViews[key];
 
             if(controls.notNil) {
@@ -614,7 +614,7 @@ PcontrolGui {
 
     filteredParamsDo { | func |
         this.filteredParams.keysValuesDo{ | key, spec |
-            var val = pcontrol.params[key].param.source;
+            var val = pcontrol.params[key].param.value;
             val = func.value(val, spec);
             pcontrol.setOne(key, val);
         }
@@ -628,7 +628,7 @@ PcontrolGui {
 
         pcontrol.params.keysValuesDo({ | key, param |
             var spec = param.spec;
-            var val = param.source;
+            var val = param.param.value;
 
             if(this.paramPresentInArray(key, ignored).not, {
                 if(val.isNumber, {

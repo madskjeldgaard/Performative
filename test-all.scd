@@ -1,4 +1,4 @@
 PerformativeTest.runAll();
 
 
-TestPcontrol.run
+TestParamFuncSet.run

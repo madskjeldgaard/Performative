@@ -1,11 +1,14 @@
 // ParamFunc and ParamFuncSet are classes for managing parameters with associated callback functions and specs. They allow you to define parameters that automatically call a function when their value changes, and to manage collections of such parameters with the ability to save and restore snapshots of their states.
 ParamFunc {
-    var <func, <spec, <source, <normalizedValue;
+    var <func, <spec, <source, <normalizedValue, <oscFunc;
     var <isListOfSpecs = false;
     var <locked = false;
     var <controlMode;
     var <lastRawValue;
     var <changeCallback; // Callback when it is changed
+    var <oscPath;
+    var <oscFromNetAddr;
+    var <oscResponseNetAddr;
 
     // If controlspec is an array, an ArrayedSpec is automatically created from it.
     *new { |func, controlspec|
@@ -52,7 +55,7 @@ ParamFunc {
         controlMode = nil;
         controlMode = case
             { isArray && isListOfSpecs} { \specList }
-            { isArray || isArraySpec } { \arrayspec }
+            { isArray || isArraySpec } { \arrayspec }
             { isSpec } {\spec};
 
         if(controlMode.isNil, {
@@ -88,11 +91,13 @@ ParamFunc {
                 source = value;
 
                 if(value != lastRawValue) {
-                    func.value(value, this); // raw value for both
+                    func.value(value, this);
                     lastRawValue = value;
                 };
 
                 this.changed();
+
+                this.sendOSC();
 
             }, {
                 "ParamFunc: Can't set value to nil".error;
@@ -119,7 +124,7 @@ ParamFunc {
                             "ParamFunc: Value array should be same size as speclist array".error;
                         }, {
                             // Special case: specList, it's a list of control specs
-                            var mapped = spec.collect{|specItem, index| specItem.map(value[index])};
+                            var mapped = spec.collect{|specItem, index| specItem.map(value[index])};
                             source = mapped;
                             if(mapped != lastRawValue) {
                                 func.value(mapped, this); // mapped and raw
@@ -138,6 +143,7 @@ ParamFunc {
                 };
 
                 this.changed();
+                this.sendOSC();
             })
         }, {
                 "ParamFunc: Can't map value to nil".error;
@@ -157,7 +163,6 @@ ParamFunc {
 
     unmap{|value|
         ^if(value.notNil && spec.notNil, {
-            "unmapping value % with spec %".format(value, spec).postln;
             spec.unmap(value);
         }, {
             "ParamFunc: Can't unmap value to nil or no spec found".error;
@@ -188,8 +193,90 @@ ParamFunc {
             });
 
             this.changed();
+            this.sendOSC();
         })
     }
+
+    // OSC functionality
+    /*
+
+    (
+        var fromAddr = NetAddr.new("10.109.121.143", 1012);
+        var toAddr = fromAddr;
+        // Create a frequency parameter with a callback
+        f = ParamFunc({ |mapped, obj|
+            ("Frequency changed to: " ++ mapped ++ " Hz").postln;
+        }, \freq.asSpec);  // Exponential frequency spec (20-20000 Hz)
+
+        f.withOSC("/arm/fader1", fromAddr, toAddr);
+    )
+
+    f.map(0.25)
+
+    */
+    withOSC {|path, fromNetAddr, responseNetAddr|
+        // Store OSC addresses
+        oscPath = path;
+        oscFromNetAddr = fromNetAddr;
+        oscResponseNetAddr = responseNetAddr;
+
+        // Free existing OSCFunc if any
+        if(oscFunc.notNil, {
+            oscFunc.free();
+            oscFunc = nil;
+        });
+
+        // Create new OSCFunc to receive normalized values
+        oscFunc = OSCFunc({ |msg, time, addr, recvPort|
+            var normVal;
+
+            // Extract normalized value from OSC message
+            // Supports both single values and arrays
+            if(msg.size > 1) {
+                if(msg.size == 2) {
+                    // Single value
+                    normVal = msg[1];
+                } {
+                    // Array of values
+                    normVal = msg[1..];
+                };
+
+                // Map the normalized value through the spec
+                this.map(normVal);
+            } {
+                "ParamFunc OSC: Received message without value on path %".format(oscPath).warn;
+            }
+        }, oscPath, fromNetAddr);
+
+        "ParamFunc: OSC listener added on path %".format(oscPath).postln;
+    }
+
+    sendOSC {
+        var normVal;
+
+        // Only send OSC if we have a response address
+        if(oscResponseNetAddr.notNil) {
+            // Get normalized value
+            normVal = this.getUnmapped;
+
+            if(normVal.notNil) {
+                // Send normalized value back
+                oscResponseNetAddr.sendMsg(oscPath, normVal);
+            };
+        };
+    }
+
+    // Clean up OSC resources
+    freeOSC {
+        if(oscFunc.notNil) {
+            oscFunc.free();
+            oscFunc = nil;
+        };
+        oscPath = nil;
+        oscFromNetAddr = nil;
+        oscResponseNetAddr = nil;
+    }
+
 }
 
 TestParamFunc : PerformativeTest {
@@ -297,7 +384,6 @@ TestParamFunc : PerformativeTest {
         this.assert(pfs.at(\freq).notNil, "ParamFuncSet should contain freq key");
     }
 
-
     test_snapshot_and_restore {
         var pfs = ParamFuncSet();
         var freqSpec = [10, 1000, \exp].asSpec;
@@ -324,5 +410,159 @@ TestParamFunc : PerformativeTest {
         this.assert(pfs.at(\freq).isNil, "Removed key should be nil");
         pfs.removeSnapshot(\snap1);
         this.assert(pfs.snapshots[\snap1].isNil, "Removed snapshot should be nil");
+    }
+
+    // New OSC tests
+    test_oscBasicSetup {
+        var pf = ParamFunc({|mapped, obj| }, [0, 10].asSpec);
+        var testAddr = NetAddr("127.0.0.1", 57120);
+        var responseAddr = NetAddr("127.0.0.1", 57121);
+
+        pf.withOSC("/test/param", testAddr, responseAddr);
+
+        this.assert(pf.oscFunc.notNil, "OSCFunc should be created");
+        this.assertEquals(pf.oscPath, "/test/param", "OSC path should be set");
+        this.assertEquals(pf.oscResponseNetAddr, responseAddr, "Response address should be set");
+
+        // Cleanup
+        pf.freeOSC();
+    }
+
+    test_oscReceivingValues {
+        var pf = ParamFunc({|mapped, obj| }, [0, 100].asSpec);
+        var testAddr = NetAddr("127.0.0.1", 57120);
+        var responseAddr = NetAddr("127.0.0.1", 57121);
+        var receivedValue = false;
+
+        // Set up change callback to verify value was received
+        pf.changeCallback_({|paramFunc|
+            receivedValue = true;
+        });
+
+        pf.withOSC("/test/param", testAddr, responseAddr);
+
+        // Simulate receiving an OSC message
+        testAddr.sendMsg("/test/param", 0.75);
+
+        // Wait for async OSC processing
+        0.1.wait;
+
+        this.assert(receivedValue, "Callback should be triggered by OSC message");
+        this.assertEquals(pf.value, 75, "Value should be mapped from normalized 0.75 to 75");
+        this.assertFloatEquals(pf.getUnmapped, 0.75, "Unmapped value should be 0.75");
+
+        // Cleanup
+        pf.freeOSC();
+    }
+
+    test_oscResponseSending {
+        var pf = ParamFunc({|mapped, obj| }, [0, 1].asSpec);
+        var testAddr = NetAddr("127.0.0.1", 57120);
+        var responseAddr = NetAddr("127.0.0.1", 57121);
+        var oscReceived = false;
+        var receivedValue;
+
+        // Set up a listener on the response address
+        var responseListener = OSCFunc({ |msg|
+            oscReceived = true;
+            receivedValue = msg[1];
+        }, "/test/response", responseAddr);
+
+        pf.withOSC("/test/response", testAddr, responseAddr);
+
+        // Change the value through map
+        pf.map(0.75);
+
+        0.1.wait;
+
+        // Test if OSC message was sent to response address
+        this.assert(oscReceived, "OSC response should be sent when value changes");
+        this.assertFloatEquals(receivedValue, 0.75, "Sent OSC value should be 0.75");
+
+        // Cleanup
+        pf.freeOSC();
+        responseListener.free();
+    }
+
+    test_oscSendOnAllChanges {
+        var pf = ParamFunc({|mapped, obj| }, [20, 20000, \exp].asSpec);
+        var testAddr = NetAddr("127.0.0.1", 57120);
+        var responseAddr = NetAddr("127.0.0.1", 57121);
+        var oscCount = 0;
+
+        var responseListener = OSCFunc({ |msg|
+            oscCount = oscCount + 1;
+        }, "/test/freq", responseAddr);
+
+        pf.withOSC("/test/freq", testAddr, responseAddr);
+
+        // Test that OSC is sent on set
+        pf.set(440);
+        0.1.wait;
+        this.assertEquals(oscCount, 1, "OSC should be sent on set");
+
+        // Test that OSC is sent on map
+        pf.map(0.5);
+        0.1.wait;
+        this.assertEquals(oscCount, 2, "OSC should be sent on map");
+
+        // Test that OSC is sent on randomize
+        pf.randomize;
+        0.1.wait;
+        this.assertEquals(oscCount, 3, "OSC should be sent on randomize");
+
+        // Test that OSC is NOT sent when locked
+        pf.lock(true);
+        pf.map(0.8);
+        0.1.wait;
+        this.assertEquals(oscCount, 3, "OSC should not be sent when locked");
+
+        // Cleanup
+        pf.freeOSC();
+        responseListener.free();
+    }
+
+    test_oscArrayValues {
+        var pf = ParamFunc({|mapped, obj| }, [\freq.asSpec, \amp.asSpec]);
+        var testAddr = NetAddr("127.0.0.1", 57120);
+        var responseAddr = NetAddr("127.0.0.1", 57121);
+        var receivedNormValues;
+
+        var responseListener = OSCFunc({ |msg|
+            receivedNormValues = msg[1..];
+        }, "/test/arrayparam", responseAddr);
+
+        pf.withOSC("/test/arrayparam", testAddr, responseAddr);
+
+        // Send array of normalized values
+        testAddr.sendMsg("/test/arrayparam", 0.3, 0.8);
+
+        0.1.wait;
+
+        this.assertEquals(receivedNormValues, [0.3, 0.8], "OSC should handle array values");
+        this.assertFloatEquals(pf.value[0], \freq.asSpec.map(0.3), "First value should be mapped correctly");
+        this.assertFloatEquals(pf.value[1], \amp.asSpec.map(0.8), "Second value should be mapped correctly");
+
+        // Cleanup
+        pf.freeOSC();
+        responseListener.free();
+    }
+
+    test_oscFreeAndRecreate {
+        var pf = ParamFunc({|mapped, obj| }, [0, 1].asSpec);
+        var testAddr1 = NetAddr("127.0.0.1", 57120);
+        var testAddr2 = NetAddr("127.0.0.1", 57121);
+        var responseAddr = NetAddr("127.0.0.1", 57122);
+
+        pf.withOSC("/test/param1", testAddr1, responseAddr);
+        this.assertEquals(pf.oscPath, "/test/param1", "First OSC path should be set");
+
+        // Recreate with different path
+        pf.withOSC("/test/param2", testAddr2, responseAddr);
+        this.assertEquals(pf.oscPath, "/test/param2", "Second OSC path should be set");
+        this.assertEquals(pf.oscFromNetAddr, testAddr2, "Second from address should be set");
+
+        // Cleanup
+        pf.freeOSC();
     }
 }

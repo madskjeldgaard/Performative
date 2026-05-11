@@ -44,6 +44,19 @@ ParamFuncSet[]{
         }
     }
 
+    map{|key, value|
+        var paramFunc = params[key];
+        if(paramFunc.notNil) {
+            if(value.notNil, {
+                paramFunc.map(value);
+            }, {
+                "ParamFuncSet: Cannot map nil value for key %".format(key).warn;
+            });
+        } {
+            "ParamFuncSet: No ParamFunc found for key %".format(key).warn;
+        }
+    }
+
     add { |key, func, controlspec|
         var newFunc, currentValue;
         if(params[key].notNil) {

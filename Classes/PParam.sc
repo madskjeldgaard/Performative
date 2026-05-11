@@ -66,16 +66,17 @@ Pparam : PatternProxy{
     }
 
     getUnmapped{
-        ^param.getUnmapped
+        ^param.getUnmapped()
     }
 
     randomize{
-        param.randomize;
+        param.randomize();
     }
 
     gui{
-        ^param.gui;
+        ^param.gui();
     }
+
 }
 
 PparamDef : Pparam{
