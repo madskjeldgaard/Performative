@@ -133,6 +133,42 @@ ParamFuncSet[]{
 
         this.changed();
     }
+
+    interpolateSnapshots{|name1, name2, alpha|
+        var snapshot1 = snapshots[name1];
+        var snapshot2 = snapshots[name2];
+
+        if(snapshot1.isNil) {
+            "ParamFuncSet: No snapshot found with name %".format(name1).error;
+            ^this;
+        };
+
+        if(snapshot2.isNil) {
+            "ParamFuncSet: No snapshot found with name %".format(name2).error;
+            ^this;
+        };
+
+        snapshot1.keysValuesDo{ |key, value1|
+            var value2 = snapshot2[key];
+            if(value2.notNil) {
+                var paramFunc = params[key];
+                if(paramFunc.notNil) {
+                    var v1Unmapped = paramFunc.spec.unmap(value1);
+                    var v2Unmapped = paramFunc.spec.unmap(value2);
+                    var interpValue = paramFunc.spec.map(v1Unmapped.blend(v2Unmapped, alpha));
+                    paramFunc.set(interpValue);
+                } {
+                    "ParamFuncSet: No ParamFunc found for key % in snapshots".format(key).warn;
+                }
+            } {
+                "ParamFuncSet: Key % not found in both snapshots".format(key).warn;
+            }
+        };
+
+        this.changed();
+    }
+
+
     //------------------------------------------------------------------//
     //                             Presets                              //
     //------------------------------------------------------------------//
@@ -282,6 +318,19 @@ TestParamFuncSet : PerformativeTest {
         this.assertFloatEquals(pfs.at(\freq).value, freqSpec.map(0.1), "Restored freq should be mapped to spec");
         this.assertFloatEquals(pfs.at(\amp).getUnmapped, 0.9, "Restored amp should be 0.9");
         this.assertFloatEquals(pfs.at(\amp).value, ampSpec.map(0.9), "Restored amp should be mapped to spec");
+    }
+
+    test_snapshot_interpolation {
+        var pfs = ParamFuncSet();
+        var freqSpec = [10, 1000, \exp].asSpec;
+        pfs.add(\freq, {|mapped, obj| }, freqSpec);
+        pfs.at(\freq).map(0.0);
+        pfs.snapshot(\snap1);
+        pfs.at(\freq).map(1.0);
+        pfs.snapshot(\snap2);
+        pfs.interpolateSnapshots(\snap1, \snap2, 0.5);
+        this.assertFloatEquals(pfs.at(\freq).getUnmapped, 0.5, "Interpolated freq should be 0.5");
+        this.assertFloatEquals(pfs.at(\freq).value, freqSpec.map(0.5), "Interpolated freq should be mapped to spec");
     }
 
     test_remove_and_removeSnapshot {
