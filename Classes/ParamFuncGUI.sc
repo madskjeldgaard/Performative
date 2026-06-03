@@ -279,7 +279,9 @@
             } {
                 this.lock(true)
             };
-        });
+        })
+        .value_(this.locked.asInteger)
+        ;
 
         layout.add(*[randomizeButton, s: 1]);
         layout.add(*[lockButton, s: 1]);
