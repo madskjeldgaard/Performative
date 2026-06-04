@@ -1,7 +1,7 @@
 // A collection of ParamFuncs with the ability to save/restore snapshots
 ParamFuncSet[]{
     var <params;
-    var <snapshots;
+    var <snapshots, <snapshotInterpFrom, <snapshotInterpTo, <snapshotName;
     var changeCallback; // Callback when any ParamFunc in the set changes
 
     *new {
@@ -99,14 +99,25 @@ ParamFuncSet[]{
         ^snapshots.keys.asArray;
     }
 
+    setCurrentSnapshotName{|newName|
+        snapshotName = newName.asSymbol;
+        this.changed();
+    }
+
+    getCurrentSnapshotName{
+        ^snapshotName;
+    }
+
     snapshot{|name|
         // Each snapshot saves the current state of  ParamFuncs in the set
         var newSnapshot = IdentityDictionary.new;
+        name = name ? snapshotName ?? {Date.getDate.stamp};
         params.keysValuesDo{ |key, paramFunc|
             var val = paramFunc.value;
             newSnapshot.put(key, val);
         };
-        snapshots.put(name ?? {Date.getDate.stamp}, newSnapshot);
+
+        snapshots.put(name, newSnapshot);
         this.changed();
     }
 
@@ -116,7 +127,9 @@ ParamFuncSet[]{
     }
 
     restoreSnapshot{|name|
-        var snapshot = snapshots[name];
+        var snapshot;
+        name = name ? snapshotName;
+        snapshot = snapshots[name];
         if(snapshot.isNil) {
             "ParamFuncSet: No snapshot found with name %".format(name).error;
         } {
@@ -132,6 +145,29 @@ ParamFuncSet[]{
         };
 
         this.changed();
+    }
+
+    setSnapshotInterpFrom{|name|
+        if(name.notNil && this.snapshots.keys.asArray.contains(name), {
+            snapshotInterpFrom = name.asSymbol;
+            this.changed();
+        },{
+            "Could not find snapshot name %".format(name).warn
+        })
+    }
+
+    setSnapshotInterpTo{|name|
+        if(name.notNil&& this.snapshots.keys.asArray.contains(name), {
+            snapshotInterpTo = name.asSymbol;
+            this.changed();
+        }, {
+            "Could not find snapshot name %".format(name).warn
+        })
+    }
+
+    // As opposed to the one below, this uses the built in snapshot names set.
+    interpolate{|amount|
+        this.interpolateSnapshots(this.snapshotInterpFrom, this.snapshotInterpTo, amount)
     }
 
     interpolateSnapshots{|name1, name2, alpha|
