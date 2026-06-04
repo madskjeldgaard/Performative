@@ -7,14 +7,18 @@ ParamFuncSetGui {
     var randomizeAllButton;
     var font, headerFont;
     var deferDelta = nil;
-
     // Callback functions for updates
     var setChangeFunc;
     var paramChangeFuncs;
-
     // Fixed sizes for consistent layout
     const label_width = 200;
     const numbox_width = 200;
+
+    // Interpolation widgets
+    var snapshotFromPopup, snapshotToPopup, interpKnob;
+
+    // Flag to prevent snapshot popup updates during interpolation
+    var <updatingInterpolation = false;
 
     *new { |set, parent, bounds, show = true|
         ^super.new().init(set, parent, bounds, show);
@@ -167,15 +171,47 @@ ParamFuncSetGui {
             this.updateParam(key);
         };
 
-        // Also update snapshot popup in case snapshots changed
-        this.updateSnapshotPopup();
+        // Only update snapshot popups if not in the middle of interpolation
+        if(updatingInterpolation.not) {
+            this.updateSnapshotPopup();
+        };
     }
 
     updateSnapshotPopup {
         var names = set.getSnapshotNames();
+        var currentFromValue = snapshotFromPopup.value;
+        var currentToValue = snapshotToPopup.value;
+        var currentSnapshotValue = snapshotPopup.value;
+
         if(snapshotPopup.notNil) {
             snapshotPopup.items = if(names.isEmpty) { #["No Snapshots"] } { names };
-            snapshotPopup.value = 0;
+            // Try to preserve selection if possible
+            if(currentSnapshotValue < snapshotPopup.items.size) {
+                snapshotPopup.value = currentSnapshotValue;
+            } {
+                snapshotPopup.value = 0;
+            };
+        };
+
+        // Update interpolation dropdowns
+        if(snapshotFromPopup.notNil) {
+            snapshotFromPopup.items = if(names.isEmpty) { #["No Snapshots"] } { names };
+            // Try to preserve selection if possible
+            if(currentFromValue < snapshotFromPopup.items.size) {
+                snapshotFromPopup.value = currentFromValue;
+            } {
+                snapshotFromPopup.value = 0;
+            };
+        };
+
+        if(snapshotToPopup.notNil) {
+            snapshotToPopup.items = if(names.isEmpty) { #["No Snapshots"] } { names };
+            // Try to preserve selection if possible
+            if(currentToValue < snapshotToPopup.items.size) {
+                snapshotToPopup.value = currentToValue;
+            } {
+                snapshotToPopup.value = 0;
+            };
         };
     }
 
@@ -229,11 +265,6 @@ ParamFuncSetGui {
     makeViewLayout {
         var mainLayout = VLayout.new();
 
-        // Header with title
-        // mainLayout.add(
-        //     StaticText.new().string_("ParamFuncSet Controls").font_(headerFont)
-        // );
-
         // Control section (snapshots, randomize)
         mainLayout.add(this.makeControlSection());
 
@@ -246,7 +277,7 @@ ParamFuncSetGui {
     makeControlSection {
         var controlLayout = VLayout.new();
         var snapshotLayout, buttonLayout, presetLayout, randomizeLayout;
-        var savePresetButton, loadPresetButton;
+        var savePresetButton, loadPresetButton, interpRow;
 
         // Snapshot name input - with fixed width for consistency
         snapshotNameInput = TextField.new()
@@ -260,6 +291,7 @@ ParamFuncSetGui {
             if(name.notEmpty) {
                 set.snapshot(name.asSymbol);
                 snapshotNameInput.string = "snapshot_" ++ Date.localtime.stamp;
+                this.updateSnapshotPopup();
             };
         })
         .toolTip_("Save current state as snapshot");
@@ -279,11 +311,48 @@ ParamFuncSetGui {
             if(snapshotPopup.items[0] != "No Snapshots") {
                 var name = snapshotPopup.items[snapshotPopup.value];
                 set.removeSnapshot(name);
+                this.updateSnapshotPopup();
             };
         })
         .toolTip_("Delete selected snapshot");
 
-        // Snapshot popup
+        // Interpolation controls (two dropdowns + knob)
+        snapshotFromPopup = PopUpMenu.new()
+        .allowsReselection_(true)
+        .items_(set.getSnapshotNames)
+        .action_({ |pop|
+            // Just selection - no action needed
+        })
+        .toolTip_("Select source snapshot for interpolation");
+
+        snapshotToPopup = PopUpMenu.new()
+        .allowsReselection_(true)
+        .items_(set.getSnapshotNames)
+        .action_({ |pop|
+            // Just selection - no action needed
+        })
+        .toolTip_("Select target snapshot for interpolation");
+
+        interpKnob = Slider.new()
+        .value_(0)
+        .orientation_(\horizontal)
+        .action_({ |s|
+            var interpAmount = s.value;
+            var interpFrom = snapshotFromPopup.items[snapshotFromPopup.value];
+            var interpTo = snapshotToPopup.items[snapshotToPopup.value];
+
+            // Set flag to prevent snapshot popup updates
+            updatingInterpolation = true;
+
+            "Interpolating from % to % with alpha = %".format(interpFrom, interpTo, interpAmount).postln;
+            set.interpolateSnapshots(interpFrom, interpTo, interpAmount);
+
+            // Clear flag
+            updatingInterpolation = false;
+        })
+        .toolTip_("Interpolation amount (0 = From, 1 = To)");
+
+        // Snapshot popup (for recall/delete)
         snapshotPopup = PopUpMenu.new()
         .items_(set.getSnapshotNames)
         .action_({ |pop|
@@ -321,13 +390,26 @@ ParamFuncSetGui {
         })
         .toolTip_("Randomize all parameters");
 
+        // Layouts
+        // Interpolation row placed at top of control section
+        interpRow = HLayout.new(
+            [StaticText.new().string_("Interpolate:"), s: 1],
+            StaticText.new().string_("From:"),
+            snapshotFromPopup,
+            StaticText.new().string_("To:"),
+            snapshotToPopup,
+            StaticText.new().string_("Amt:"),
+            interpKnob,
+            StaticText.new().string_("Randomize:"),
+            randomizeAllButton,
+        );
+
         buttonLayout = HLayout.new(
             [StaticText.new().string_("Snap:"), s: 1],
             snapshotNameInput,
             saveSnapshotButton,
             recallSnapshotButton,
             deleteSnapshotButton,
-            randomizeAllButton,
             snapshotPopup
         );
 
@@ -337,6 +419,7 @@ ParamFuncSetGui {
         );
 
 
+        controlLayout.add(interpRow);
         controlLayout.add(buttonLayout);
         controlLayout.add(presetLayout);
 
@@ -424,7 +507,6 @@ ParamFuncSetGui {
         this.removeDependencies();
     }
 }
-
 + ParamFuncSet{
     asView { |parent, bounds, font|
         var view = if(parent.isNil) {
@@ -448,17 +530,5 @@ ParamFuncSetGui {
             window.view.removeAll;
         };
         window.front();
-    }
-}
-
-+ParamsDef{
-    gui {|title|
-        var window = Window.new(title);
-        window.layout = VLayout.new();
-        window.layout.add(this.asView(window));
-        window.front();
-        window.onClose = {
-            window.view.removeAll;
-        };
     }
 }
