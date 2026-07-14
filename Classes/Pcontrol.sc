@@ -60,7 +60,9 @@ Pcontrol [] {
         if(params[key].notNil, {
             params[key].set(value);
         }, {
-            "%: param % not found".format(this.class.name, key).warn;
+            if(func.notNil, {
+                "%%: param % not found".format(this.class.name,if(this.class == Pctrldef, {"(%)".format(this.key)}),  key).warn;
+            })
         })
         }, {
             "%: value for % cannot be nil".format(this.class.name, key).warn;
@@ -85,7 +87,9 @@ Pcontrol [] {
             params[key].map(value);
             this.changed(key, [key, value]);
         }, {
-            "%: param % not found".format(this.class.name, key).warn;
+            if(func.notNil, {
+                "%%: param % not found".format(this.class.name,if(this.class == Pctrldef, {"(%)".format(this.key)}),  key).warn;
+            })
         })
         }, {
             "%: value for % cannot be nil".format(this.class.name, key).warn;
@@ -140,8 +144,6 @@ Pcontrol [] {
     stop{
         patternProxyPlayer.isNil.not.if({
             patternProxyPlayer.stop;
-        }, {
-            "%: no pattern to stop".format(this.class.name).warn;
         })
     }
 
