@@ -31,7 +31,16 @@ ParamFuncSet[]{
         changeCallback = newFunc;
     }
 
-    set{|key, value|
+    set{|...keysValues|
+        var pairs = keysValues.clump(2);
+        pairs.do{|pair|
+            var key = pair[0];
+            var value = pair[1];
+            this.setOne(key, value);
+        }
+    }
+
+    setOne{|key, value|
         var paramFunc = params[key];
         if(paramFunc.notNil) {
             if(value.notNil, {
@@ -44,7 +53,7 @@ ParamFuncSet[]{
         }
     }
 
-    map{|key, value|
+    mapOne{|key, value|
         var paramFunc = params[key];
         if(paramFunc.notNil) {
             if(value.notNil, {
@@ -54,6 +63,15 @@ ParamFuncSet[]{
             });
         } {
             "ParamFuncSet: No ParamFunc found for key %".format(key).warn;
+        }
+    }
+
+    map{|...keysValues|
+        var pairs = keysValues.clump(2);
+        pairs.do{|pair|
+            var key = pair[0];
+            var value = pair[1];
+            this.mapOne(key, value);
         }
     }
 
@@ -432,6 +450,26 @@ TestParamFuncSet : PerformativeTest {
         this.assert(pfs.at(\freq).notNil, "ParamFuncSet should contain freq key after replacement");
         this.assert(pfs.at(\freq).func != originalFunc, "Func should be replaced when adding existing key");
         this.assert(pfs.at(\freq).spec != originalSpec, "Spec should be replaced when adding existing key");
+    }
+
+    test_multi_set{
+        // Set multiple params at once
+        var pfs = ParamFuncSet();
+        pfs.add(\freq, {|mapped, obj| }, [10, 1000, \exp].asSpec);
+        pfs.add(\amp, {|mapped, obj| }, \amp.asSpec);
+        pfs.set(\freq, 0.5, \amp, 0.8);
+        this.assertFloatEquals(pfs.at(\freq).value, 0.5, "Freq should be set to 0.5");
+        this.assertFloatEquals(pfs.at(\amp).value, 0.8, "Amp should be set to 0.8");
+    }
+
+    test_multi_map{
+        // Map multiple params at once
+        var pfs = ParamFuncSet();
+        pfs.add(\freq, {|mapped, obj| }, [10, 1000, \exp].asSpec);
+        pfs.add(\amp, {|mapped, obj| }, \amp.asSpec);
+        pfs.map(\freq, 0.5, \amp, 0.8);
+        this.assertFloatEquals(pfs.at(\freq).getUnmapped, 0.5, "Freq should be mapped to 0.5");
+        this.assertFloatEquals(pfs.at(\amp).getUnmapped, 0.8, "Amp should be mapped to 0.8");
     }
 
 }
