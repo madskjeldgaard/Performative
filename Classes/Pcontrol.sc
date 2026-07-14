@@ -132,7 +132,7 @@ Pcontrol [] {
                 patternProxy.source = Pfadeinout2.new(patternProxy.source, fadeInTime: fadeInTime, fadeOutTime: fadeOutTime, numChannels: fadeChannels)
             });
 
-            patternProxyPlayer = patternProxy.play(argClock: clock, quant: quant, doReset: doReset);
+            patternProxyPlayer = patternProxy.play(argClock: clock, quant: quant ? this.patternProxy.quant, doReset: doReset);
         });
 
     }
