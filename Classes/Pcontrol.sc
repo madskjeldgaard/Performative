@@ -211,10 +211,11 @@ Pcontrol [] {
     addOneParam{|key, source, spec|
         key = key.asSymbol;
         if(params[key].notNil, {
-            params[key].source = source;
             params[key].param.spec = spec ? Spec.specs[key] ? params[key].param.spec ? [0.0 ,1.0, \lin].asSpec;
+            params[key].source = source;
         }, {
             var newParam = Pparam.new(source, spec);
+            newParam.set(source);
             params.put(key, newParam)
         })
     }
