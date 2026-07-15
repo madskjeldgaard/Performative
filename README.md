@@ -6,6 +6,23 @@ One of the main goals of this library is to create a framework for managing and 
 
 Interacting with the parameters should be as easy as possible. For this reason, all of them can be either set with direct values or using a normalized range of floating point numbers as inputs (0.0 to 1.0) — this makes it simple to map them to controllers, and it allows the creation of automatic GUI's, randomization, snapshots and other convenient tricks for interacting with them in complex and fun ways.
 
+## Features
+
+- Easily design parameters or full instruments
+- Automatic gui creation based on parameters
+- New type of spec: ArrayedSpec for parameters made from arbitrary lists/choices (including non-numeric objects)
+- Automatically map a normalized input (0.0-1.0) to any parameter range, included parameters of multiple choice (ArrayedSpec)
+- Presets and snapshots for saving/restoring parameter states
+- Randomization and per-parameter locking to protect values from randomize/preset changes
+- Pattern-native single parameters: Pparam / PparamDef. Advanced versions of [Pdefn](https://doc.sccode.org/Classes/Pdefn.html) with spec built into them, and other features.
+- Pcontrol / Pctrldef: event-pattern instruments with embedded Pparams and automatic GUI
+- ParamFuncSet / ParamsDef: grouped parameters with callbacks, snapshots, restore, GUI.
+- Export as MIDI from patterns
+- Def-style globals for easy live-coding access (def variants of classes)
+- Automatic GUI generation for parameters, parameter sets, and instruments
+- Unit-tested codebase with PerformativeTest.runAll() for running tests
+
+
 ## Support
 
 Making this took a long time and effort. If you find it useful, please consider supporting with a donation:
