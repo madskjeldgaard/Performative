@@ -1,7 +1,7 @@
 (
   name: "Performative",
   summary: "Design performative instruments and composition setups.",
-  version: "0.0.1",
+  version: "v0.2.0",
   schelp: "Performative.schelp",
   dependencies: ["https://codeberg.org/madskjeldgaard/Monolithic"],
   license: "GNU GPL v3.0",

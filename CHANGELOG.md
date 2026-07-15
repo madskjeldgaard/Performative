@@ -1,4 +1,4 @@
-## [unreleased]
+## [0.2.0] - 2026-07-15
 
 ### 🚀 Features
 
@@ -15,10 +15,12 @@
 - Update lock-button on init
 - Use internal quant if no quant supplied in .play()
 - Clean up unnecessary warnings
+- Gui did not have source value on init
 
 ### 💼 Other
 
 - Improvements
+- Add changelog and justfile
 
 ### 🚜 Refactor
 
