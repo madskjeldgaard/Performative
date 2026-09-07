@@ -82,17 +82,16 @@ ParamFunc {
         this.changed();
     }
 
-    set { |value|
+    set { |value, force=false|
         if(locked.not, {
             if(value.notNil, {
                 source = value;
 
-                if(value != lastRawValue) {
+                if(value != lastRawValue or: { force }) {
                     func.value(value, this);
                     lastRawValue = value;
+                    this.changed();
                 };
-
-                this.changed();
 
             }, {
                 "ParamFunc: Can't set value to nil".error;

@@ -15,10 +15,20 @@ ParamFuncSet[]{
     }
 
     applyAll {
-        params.keysValuesDo{ |name, paramFunc|
-            var currentValue = paramFunc.value;
-            paramFunc.set(currentValue);
+        params.keysValuesDo{ |name|
+            this.apply(name)
         }
+    }
+
+    // Trigger one apply of a parameters value
+    apply{|paramName, force=true|
+        var paramFunc = params.at(paramName);
+        if(paramFunc.notNil, {
+            var currentValue = paramFunc.value;
+            paramFunc.set(currentValue, force: force);
+        }, {
+            "Param % not found".format(paramName).error
+        })
     }
 
     changed {
