@@ -17,6 +17,38 @@ Pcontrol [] {
         ^super.new().init(wrapFunc);
     }
 
+    copyState { |otherPctrldef|
+        if(otherPctrldef.patternProxy.source.isNil, {
+            "%: no pattern to copy".format(this.class.name).error;
+        });
+
+        // this.patternProxy.isNil.if({
+        //     this.patternProxy = EventPatternProxy.new(otherPctrldef.patternProxy.source.copy());
+        // }, {
+        //     this.patternProxy.source = otherPctrldef.patternProxy.source;
+        // });
+
+
+        // this.patternProxy.envir = otherPctrldef.patternProxy.envir.copy;
+
+        this.params = otherPctrldef.params.collect{|param| param.copy()};
+        this.source_(otherPctrldef.func.copy());
+        this.patternProxy.envir = otherPctrldef.patternProxy.envir.copy();
+    }
+
+    // Convenience – copy and immediately change bits of the pattern
+    copyChange{ |toKey ... changeKeyValues|
+        var newPctrlDef = this.copy(toKey);
+
+        if(changeKeyValues.arePairs, {
+            newPctrlDef.change(*changeKeyValues)
+        }, {
+            "can't set changekeyvalues if not pairs".error;
+        });
+
+        ^newPctrlDef
+    }
+
     quant_{|newQuant|
         this.patternProxy.quant = newQuant;
         params.keysValuesDo{|k,v| v.quant = newQuant };
