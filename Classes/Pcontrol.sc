@@ -17,6 +17,10 @@ Pcontrol [] {
         ^super.new().init(wrapFunc);
     }
 
+    copy {
+        ^this.class.new().copyState(this)
+    }
+
     copyState { |otherPctrldef|
         if(otherPctrldef.patternProxy.source.isNil, {
             "%: no pattern to copy".format(this.class.name).error;
