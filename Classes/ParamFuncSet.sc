@@ -14,6 +14,10 @@ ParamFuncSet[]{
         changeCallback = {};
     }
 
+    exists{|paramName|
+        ^params.keys.asArray.contains(paramName.asSymbol)
+    }
+
     applyAll {
         params.keysValuesDo{ |name|
             this.apply(name)
