@@ -18,16 +18,26 @@ ArrayedSpec{
 
     // Take a normalized input 0.0-1.0 and return a value from the array
     map{|value|
-        var index = indexSpec.map(value).asInteger;
+        var index = indexSpec.map(value);
+        var mappedValue = values[index.asInteger];
 
-        ^values[index]
+        ^mappedValue.notNil.if({
+            mappedValue
+        }, {
+            "%: No mapped value corresponds to input value %".format(this.class.name, value).error;
+        })
     }
 
     // Take a value from an array and return a normalized value 0.0-1.0 depending on it's index in the array
     unmap{|value|
         var index = values.indexOfEqual(value);
 
-        ^indexSpec.unmap(index)
+        ^index.notNil.if({
+            indexSpec.unmap(index)
+        }, {
+            "%: No unmapped value corresponds to input value %".format(this.class.name, value).error;
+        })
+
     }
 
     asSpec{
